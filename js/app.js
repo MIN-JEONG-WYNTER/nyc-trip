@@ -1,7 +1,7 @@
 import { Store, REPO, mergeTrips } from "./store.js";
 import { CATEGORIES, CUISINES, MEAL_SLOTS, cat, kindOf } from "./categories.js";
 import { parseHours, describeHours, fmtMin, toMin, weekdayOf } from "./hours.js";
-import { generateSchedule, inputsKey, tripDate } from "./optimizer.js";
+import { generateSchedule, applySuggestion, inputsKey, tripDate } from "./optimizer.js";
 import { parseRequest, describeRule, applyRequests } from "./requests.js";
 import { searchPlaces, reverseGeocode, lookupHours, findBranches, fillBranchHours } from "./search.js";
 
@@ -129,6 +129,7 @@ function setView(view) {
 function renderPlan() {
   const t = trip();
   renderRequests();
+  document.querySelectorAll("#prefChips [data-pref]").forEach((b) => b.classList.toggle("active", !!t.meta.prefs?.[b.dataset.pref]));
   const sch = t.schedule;
   const nDays = t.meta.days.length;
   const now = nycNow();
@@ -225,6 +226,7 @@ function renderPlan() {
   );
   $("#timeline").innerHTML = rows.join("");
 
+  renderSuggestions(sch);
   const un = sch.unscheduled.filter((u) => placeById(u.id) && !placeById(u.id).deleted);
   $("#unscheduled").innerHTML = un.length
     ? `<div class="map-title"><h3>🙅 이번 일정에 못 넣은 곳</h3><span>${un.length}곳</span></div>` +
@@ -237,6 +239,43 @@ function renderPlan() {
         .join("")
     : "";
 }
+
+// 이동 줄이기 추천 (일정 만들 때 계산해 둔 것)
+function renderSuggestions(sch) {
+  const sg = sch.suggest;
+  const live = (x) => placeById(x.id) && !placeById(x.id).deleted;
+  const remove = (sg?.remove || []).filter((x) => live(x) && placeById(x.id).selected);
+  const add = (sg?.add || []).filter((x) => live(x) && !placeById(x.id).selected);
+  if (!remove.length && !add.length) {
+    $("#suggestions").innerHTML = "";
+    return;
+  }
+  const row = (x, text, act, label) => {
+    const p = placeById(x.id);
+    return `<div class="sg"><div class="body"><b>${kindOf(p).icon} ${esc(p.name)}</b><small>${text}</small></div>
+      <button data-sg="${act}" data-id="${esc(p.id)}">${label}</button></div>`;
+  };
+  $("#suggestions").innerHTML = `<div class="map-title"><h3>💡 이동 줄이기 추천</h3><span>하나씩 적용했을 때 기준</span></div>
+    ${remove.length ? `<div class="sg-title">빼면 이동이 줄어드는 곳</div>` + remove.map((x) => row(x, `DAY ${x.day + 1}에서 빼면 이동 <b>−${x.save}분</b>`, "hold", "보류로")).join("") : ""}
+    ${add.length ? `<div class="sg-title">동선에 거의 그대로 들어가는 보류 장소</div>` + add.map((x) => row(x, `DAY ${x.day + 1} 동선에 넣어도 이동 <b>+${x.extra}분</b>`, "pick", "갈 곳으로")).join("") : ""}`;
+}
+
+$("#suggestions").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-sg]");
+  if (!b) return;
+  const p = placeById(b.dataset.id);
+  const pick = b.dataset.sg === "pick";
+  const sg = (trip().schedule.suggest?.[pick ? "add" : "remove"] || []).find((x) => x.id === p.id);
+  store.updatePlace(p.id, { selected: pick });
+  const { trip: input, wishes } = applyRequests(trip(), trip().meta.requests);
+  const next = sg && applySuggestion(input, trip().schedule, { type: pick ? "add" : "remove", id: p.id, day: sg.day }, { wishes, prefs: trip().meta.prefs || {} });
+  if (!next) return runGenerate(); // 그대로 적용할 수 없으면 다시 짠다
+  store.update((t) => (t.schedule = { ...next, by: store.user }));
+  ui.day = sg.day;
+  render();
+  drawPlanMap();
+  toast(pick ? `‘${p.name}’을(를) DAY ${sg.day + 1}에 넣었어요 (+${sg.extra}분)` : `‘${p.name}’을(를) 보류로 돌렸어요 (−${sg.save}분)`);
+});
 
 function anchorRow(time, title, sub, leg = "") {
   return `<div class="item anchor">
@@ -315,6 +354,19 @@ $("#requestList").addEventListener("click", (e) => {
 
 $("#generateBtn").addEventListener("click", () => runGenerate());
 
+// 이동 옵션 (두 사람이 같은 설정을 쓰도록 공유 데이터에 저장)
+$("#prefChips").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-pref]");
+  if (!b) return;
+  const key = b.dataset.pref;
+  store.update((t) => {
+    const prefs = { ...(t.meta.prefs || {}), [key]: !t.meta.prefs?.[key] };
+    t.meta = { ...t.meta, prefs, updatedAt: Date.now() };
+  });
+  toast(trip().meta.prefs[key] ? `${b.textContent.trim()} 켬 · 다시 짜는 중…` : `${b.textContent.trim()} 끔 · 다시 짜는 중…`);
+  runGenerate();
+});
+
 function runGenerate() {
   const selected = livePlaces().filter((p) => p.selected);
   if (!selected.length && !(trip().meta.requests || []).length) {
@@ -326,7 +378,7 @@ function runGenerate() {
   btn.textContent = "⏳ 계산 중…";
   setTimeout(() => {
     const { trip: input, wishes } = applyRequests(trip(), trip().meta.requests);
-    const sch = generateSchedule(input, { timeBudgetMs: 1200, wishes });
+    const sch = generateSchedule(input, { timeBudgetMs: 2000, wishes, prefs: trip().meta.prefs || {} });
     sch.inputsKey = inputsKey(trip());
     store.update((t) => (t.schedule = { ...sch, by: store.user }));
     btn.disabled = false;
