@@ -240,7 +240,7 @@
    },
    "before": null,
    "priority": "must",
-   "selected": true,
+   "selected": false,
    "note": "Battery Park에서 출발·복귀 (Liberty Island 포함)",
    "osm": {
     "type": "node",
@@ -261,14 +261,14 @@
     "pin": 1791515004201,
     "before": 1791515004201,
     "priority": 1791515004201,
-    "selected": 1791526304047,
+    "selected": 1791526306242,
     "note": 1791515004201,
     "osm": 1791515004201,
     "addedBy": 1791515004201,
     "googleHours": 1791515004201
    },
    "baseAt": 1791515004201,
-   "updatedAt": 1791526304047,
+   "updatedAt": 1791526306242,
    "updatedBy": "dohyun1411"
   },
   {
