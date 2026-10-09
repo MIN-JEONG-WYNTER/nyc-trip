@@ -351,13 +351,24 @@ export function createSolver(trip, wishes = [], prefs = {}) {
     return groupCost(after) - groupCost(seqs);
   }
 
+  // 날짜를 정하지 않은 요청("루프탑은 밤에")이 일정 어디에서도 안 지켜지면 비용
+  const anyDayWishes = wishes.filter((w) => w.type === "wish" && w.day == null && w.ids?.size);
+  function anyDayMiss(evals) {
+    let c = 0;
+    for (const w of anyDayWishes) {
+      const hit = evals.some((ev) => ev.items.some((it) => w.ids.has(it.id) && (!w.win || (it.start >= w.win[0] && it.start <= w.win[1])) && (!w.accept || w.accept(it.id, it.branch || 0))));
+      if (!hit) c += w.must ? WISH_MISS_MUST : WISH_MISS;
+    }
+    return c;
+  }
+
   function makeSolution(seqs) {
     const evals = seqs.map((s, d) => evalDay(d, s));
     if (evals.some((e) => !e)) return null; // 장소를 빼면서 이동 경로가 오히려 길어져 하루를 넘긴 경우
     const assign = {};
     seqs.forEach((s, d) => s.forEach((id) => (assign[id] = d)));
     const unscheduled = places.map((p) => p.id).filter((id) => assign[id] == null);
-    const cost = evals.reduce((a, e) => a + e.cost, 0) + unscheduled.reduce((a, id) => a + penalty(id), 0) + groupCost(seqs);
+    const cost = evals.reduce((a, e) => a + e.cost, 0) + unscheduled.reduce((a, id) => a + penalty(id), 0) + groupCost(seqs) + anyDayMiss(evals);
     return { seqs, evals, assign, unscheduled, cost };
   }
 
