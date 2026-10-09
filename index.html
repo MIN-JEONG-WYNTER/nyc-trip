@@ -10,229 +10,95 @@
 <title>OUR NYC TRIP · Oct 9–12, 2026</title>
 <link rel="preconnect" href="https://unpkg.com">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<style>
-:root{
-  --bg:#f7f5f1;--card:#fff;--ink:#151515;--muted:#77736d;--line:#e7e2da;
-  --accent:#111;--soft:#f0ede8;--pink:#e9c7c7;--green:#dce8df;
-}
-*{box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif}
-button{font:inherit}
-.hero{padding:calc(24px + env(safe-area-inset-top)) 20px 22px;background:#111;color:#fff}
-.hero .eyebrow{font-size:12px;letter-spacing:.16em;opacity:.65;margin-bottom:10px}
-.hero h1{font-size:32px;line-height:1.05;margin:0 0 8px;font-weight:800;letter-spacing:-.04em}
-.hero p{margin:0;color:#c9c9c9;font-size:14px}
-.hero-actions{display:flex;gap:8px;margin-top:18px}
-.hero-actions button{border:0;border-radius:999px;padding:10px 14px;background:#fff;color:#111;font-weight:700;font-size:13px}
-.hero-actions .ghost{background:#2a2a2a;color:#fff}
-.wrap{max-width:760px;margin:0 auto}
-.section{padding:18px 16px}
-.intro{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
-.stat b{display:block;font-size:18px;margin-bottom:3px}
-.stat span{font-size:11px;color:var(--muted)}
-.tabs{position:sticky;top:0;z-index:1000;background:rgba(247,245,241,.94);backdrop-filter:blur(12px);padding:10px 12px;border-bottom:1px solid var(--line);display:flex;gap:7px;overflow-x:auto}
-.tab{flex:0 0 auto;border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:700}
-.tab.active{background:#111;color:#fff;border-color:#111}
-.day{display:none}
-.day.active{display:block}
-.day-head{padding:18px 16px 10px}
-.day-head h2{margin:0;font-size:22px;letter-spacing:-.03em}
-.day-head p{margin:5px 0 0;color:var(--muted);font-size:13px}
-.badge{display:inline-block;margin-top:9px;padding:5px 9px;border-radius:999px;background:var(--soft);font-size:11px;font-weight:700}
-.timeline{padding:4px 16px 22px}
-.item{display:grid;grid-template-columns:54px 1fr;gap:10px;position:relative}
-.item:not(:last-child)::after{content:"";position:absolute;left:26px;top:39px;bottom:-9px;width:1px;background:#d9d4cc}
-.time{font-size:12px;font-weight:800;color:#777;padding-top:14px;text-align:center;z-index:1}
-.dot{width:9px;height:9px;border-radius:50%;background:#111;margin:6px auto 0;box-shadow:0 0 0 5px var(--bg)}
-.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:13px;margin:5px 0 10px;box-shadow:0 2px 8px rgba(0,0,0,.025)}
-.card .type{font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:#999;margin-bottom:3px}
-.card h3{font-size:15px;margin:0 0 4px;letter-spacing:-.02em}
-.card p{font-size:12px;line-height:1.45;color:#666;margin:0}
-.card .pill{display:inline-block;margin-top:8px;font-size:10px;padding:4px 7px;border-radius:999px;background:#f3f1ed}
-.mapbox{height:430px;border-radius:20px;overflow:hidden;border:1px solid var(--line);background:#ddd}
-.map-title{display:flex;justify-content:space-between;align-items:end;margin:4px 0 10px}
-.map-title h3{margin:0;font-size:18px}
-.map-title span{font-size:11px;color:var(--muted)}
-.route-note{font-size:11px;color:var(--muted);line-height:1.45;margin-top:8px}
-.footer{padding:25px 16px calc(30px + env(safe-area-inset-bottom));text-align:center;color:#888;font-size:11px}
-.leaflet-control-attribution{font-size:8px!important}
-@media(min-width:800px){
-  .hero{border-radius:0 0 24px 24px}
-  .wrap{box-shadow:0 0 35px rgba(0,0,0,.05);min-height:100vh}
-}
-</style>
+<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <div class="wrap">
   <header class="hero">
     <div class="eyebrow">COUPLE TRIP · NEW YORK CITY</div>
     <h1>OUR NYC TRIP 🗽</h1>
-    <p>October 9–12, 2026 · 4 DAYS / 3 NIGHTS</p>
+    <p id="heroDates">October 9–12, 2026 · 4 DAYS / 3 NIGHTS</p>
     <div class="hero-actions">
       <button id="shareBtn">↗ 공유하기</button>
-      <button class="ghost" onclick="document.querySelector('#days').scrollIntoView()">🗓 일정 보기</button>
+      <button id="syncChip" class="ghost sync-chip" data-status="local">● 이 폰에만 저장</button>
     </div>
   </header>
 
-  <main id="days">
-    <section class="section intro">
-      <div class="stat"><b>4 days</b><span>Manhattan + Brooklyn</span></div>
-      <div class="stat"><b>👩🏻‍❤️‍👨🏻</b><span>our NYC adventure</span></div>
-      <div class="stat"><b>🗽 Liberty</b><span>boat + island</span></div>
-      <div class="stat"><b>🎭 Chicago</b><span>Oct 11 · evening</span></div>
+  <nav class="mainnav" aria-label="메뉴">
+    <button class="nav active" data-view="plan">🗓 일정</button>
+    <button class="nav" data-view="places">📍 장소 <span id="placeCount"></span></button>
+    <button class="nav" data-view="settings">⚙️ 설정</button>
+  </nav>
+
+  <main>
+    <section id="view-plan" class="view active">
+      <div class="plan-bar">
+        <div id="planStats" class="plan-stats"></div>
+        <button id="generateBtn" class="primary">✨ 일정 자동 생성</button>
+      </div>
+      <div id="staleNotice" class="notice" hidden>장소나 조건이 바뀌었어요. <b>일정 자동 생성</b>을 다시 눌러 반영하세요.</div>
+      <nav class="tabs" id="dayTabs" aria-label="여행 날짜"></nav>
+      <div id="dayHead" class="day-head"></div>
+      <div id="timeline" class="timeline"></div>
+      <section class="section">
+        <div class="map-title"><h3>🗺️ 이날의 동선</h3><span>번호 = 방문 순서</span></div>
+        <div id="planMap" class="mapbox"></div>
+        <div class="route-note">※ 이동시간은 직선거리로 추정한 값이에요(도보 또는 지하철). 실제 MTA 운행과 다를 수 있어요.</div>
+      </section>
+      <section id="unscheduled" class="section"></section>
     </section>
 
-    <nav class="tabs" aria-label="Trip days">
-      <button class="tab active" data-day="day1">10/9 · FRI</button>
-      <button class="tab" data-day="day2">10/10 · SAT</button>
-      <button class="tab" data-day="day3">10/11 · SUN</button>
-      <button class="tab" data-day="day4">10/12 · MON</button>
-    </nav>
+    <section id="view-places" class="view">
+      <div class="section">
+        <div class="search">
+          <input id="searchInput" type="search" placeholder="장소·식당 검색 (영어 이름, 예: Joe's Pizza)" autocomplete="off" enterkeyhint="search">
+          <div id="searchResults" class="results" hidden></div>
+        </div>
+        <div class="row-actions">
+          <button id="addManualBtn">＋ 직접 추가</button>
+          <button id="lookupAllBtn">🕐 빈 영업시간 OSM에서 찾기</button>
+        </div>
+        <div class="chips" id="placeFilter">
+          <button class="chip active" data-filter="all">전체</button>
+          <button class="chip" data-filter="selected">갈 곳</button>
+          <button class="chip" data-filter="unselected">보류</button>
+        </div>
+      </div>
+      <div id="placeList" class="place-list"></div>
+      <section class="section">
+        <div class="map-title"><h3>🗺️ 후보 지도</h3><span>검은 점 = 갈 곳, 회색 = 보류</span></div>
+        <div id="pickBanner" class="notice pick" hidden>지도를 눌러 위치를 정하세요 <button id="pickCancel">취소</button></div>
+        <div id="placesMap" class="mapbox"></div>
+      </section>
+    </section>
 
-    <section id="day1" class="day active">
-      <div class="day-head"><h2>DAY 1 · SOHO → WEST VILLAGE</h2><p>도착 후 쇼핑 + L’Industrie 🍕</p><span class="badge">체크인 · 쇼핑 · 피자</span></div>
-      <div class="timeline" id="timeline1"></div>
-    </section>
-    <section id="day2" class="day">
-      <div class="day-head"><h2>DAY 2 · LIBERTY → UWS → ROOFTOP</h2><p>자유의 여신상 + 자연사박물관 + 스테이크 + 야경</p><span class="badge">보트 · 박물관 · 데이트</span></div>
-      <div class="timeline" id="timeline2"></div>
-    </section>
-    <section id="day3" class="day">
-      <div class="day-head"><h2>DAY 3 · CHICAGO → DUMBO</h2><p>러시 티켓을 먼저 확보하고 브루클린으로</p><span class="badge">Rush 최우선 · BBQ · Musical</span></div>
-      <div class="timeline" id="timeline3"></div>
-    </section>
-    <section id="day4" class="day">
-      <div class="day-head"><h2>DAY 4 · DOWNTOWN</h2><p>Oculus + 9/11 Memorial 후 공항/다음 일정</p><span class="badge">체크아웃</span></div>
-      <div class="timeline" id="timeline4"></div>
-    </section>
-
-    <section class="section">
-      <div class="map-title"><h3>🗺️ 전체 이동 지도</h3><span>탭하면 DAY별 지도도 볼 수 있어요</span></div>
-      <div id="map" class="mapbox"></div>
-      <div class="route-note">※ 지도 선은 여행 동선을 보기 쉽게 만든 대표 경로입니다. 실제 MTA 운행/도보 경로와는 다를 수 있어요.</div>
+    <section id="view-settings" class="view">
+      <div class="section" id="syncSection"></div>
+      <div class="section" id="tripSection"></div>
+      <div class="section">
+        <div class="card">
+          <h3>🔗 링크로 보내기</h3>
+          <p>지금 이 폰의 데이터를 통째로 담은 링크를 만들어요. 받은 사람이 열면 자기 데이터와 합쳐져요. (GitHub 연결 없이 주고받을 때)</p>
+          <div class="row-actions"><button id="snapshotBtn">링크 복사</button></div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="card">
+          <h3>초기화</h3>
+          <p>이 폰에 저장된 데이터를 지우고 공유 데이터(없으면 처음 일정)로 다시 불러와요.</p>
+          <div class="row-actions"><button id="resetBtn" class="danger">이 폰 데이터 초기화</button></div>
+        </div>
+      </div>
     </section>
   </main>
 
-  <footer class="footer">Made for our NYC trip · 2026 🗽❤️</footer>
+  <footer class="footer">Made for our NYC trip · 2026 🗽❤️<br>장소 데이터 © OpenStreetMap contributors · 검색 Photon</footer>
 </div>
 
+<dialog id="sheet" class="sheet"></dialog>
+<div id="toast" class="toast" hidden></div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-const days = {
-  day1: [
-    ["15:00","HOTEL","Club Quarters World Trade Center","체크인 · 짐 정리","숙소"],
-    ["16:00","SHOP","Kith Manhattan","SoHo/NoHo 쇼핑","쇼핑"],
-    ["17:00","SHOP","What Goes Around Comes Around","빈티지/컨셉 스토어","쇼핑"],
-    ["18:00","SHOP","Flying Solo","독립 디자이너 쇼핑","쇼핑"],
-    ["19:00","FOOD","L’Industrie Pizzeria · West Village","대표 메뉴로 저녁 🍕","L’Industrie"],
-    ["20:00","WALK","West Village","가볍게 동네 구경","데이트"],
-    ["21:00","HOTEL","호텔 복귀","휴식",""]
-  ],
-  day2: [
-    ["08:00","BREAKFAST","호텔 주변","간단히 아침",""],
-    ["09:00","BOAT","Battery Park","Statue City Cruises 탑승","Statue of Liberty"],
-    ["10:00","BOAT","Liberty Island","자유의 여신상 관람","필수"],
-    ["11:00","BOAT","Battery Park 복귀","페리 하선",""],
-    ["13:00","MUSEUM","American Museum of Natural History","핵심 전시 위주 관람","AMNH"],
-    ["16:00","MOVE","Midtown 이동","저녁 준비",""],
-    ["17:30","STEAK","Keens Steakhouse","뉴욕 스테이크 🍽️","Steak"],
-    ["19:30","ROOFTOP","Nubeluz","야경 + 칵테일 🌃","Rooftop"],
-    ["21:30","HOTEL","호텔 복귀","휴식",""]
-  ],
-  day3: [
-    ["08:30","HOTEL","호텔 출발","짐/필수품 확인",""],
-    ["09:30","THEATER","Ambassador Theatre","Chicago Rush 줄서기","Rush"],
-    ["12:00","THEATER","Chicago Rush 구매","티켓 확보가 최우선 🎭","Chicago"],
-    ["13:00","MOVE","DUMBO 이동","브루클린으로",""],
-    ["14:00","VIEW","DUMBO","Washington St / Manhattan Bridge 뷰","DUMBO"],
-    ["15:00","BBQ","Bark Barbecue · Time Out Market","Dominican-Texas BBQ 🔥","BBQ"],
-    ["16:00","VIEW","DUMBO 마무리","사진 + 산책",""],
-    ["17:00","THEATER","Midtown 복귀","공연 준비",""],
-    ["19:00","SHOW","Chicago","Ambassador Theatre 🎭","MUSICAL"],
-    ["21:30","HOTEL","호텔 복귀","휴식",""]
-  ],
-  day4: [
-    ["07:30","BREAKFAST","Downtown","간단한 아침",""],
-    ["08:30","VIEW","Oculus","마지막 사진 📸",""],
-    ["09:00","MEMORIAL","9/11 Memorial 주변","마지막 다운타운 산책",""],
-    ["10:00","HOTEL","호텔 복귀","짐 찾기",""],
-    ["11:00","HOTEL","체크아웃","출발 준비",""],
-    ["12:00","DEPART","New York 출발","Bye NYC 🗽❤️",""]
-  ]
-};
-
-const coords = {
- hotel:[40.70805,-74.01332], kith:[40.72455,-73.99530], wgaca:[40.72085,-74.00155],
- flying:[40.72055,-74.00415], lindustrie:[40.73338,-74.00670], battery:[40.70335,-74.01700],
- liberty:[40.68925,-74.04450], amnh:[40.78132,-73.97370], keens:[40.75055,-73.98655],
- nubeluz:[40.74495,-73.99105], ambassador:[40.76255,-73.98615], dumbo:[40.70330,-73.98830],
- bark:[40.70305,-73.98985], oculus:[40.71155,-74.01345]
-};
-const routeDays = {
- day1:["hotel","kith","wgaca","flying","lindustrie","hotel"],
- day2:["hotel","battery","liberty","battery","amnh","keens","nubeluz","hotel"],
- day3:["hotel","ambassador","dumbo","bark","dumbo","ambassador","hotel"],
- day4:["hotel","oculus","hotel"]
-};
-
-const icons = {HOTEL:"🏨",SHOP:"🛍️",FOOD:"🍕",WALK:"🚶",BREAKFAST:"☕",BOAT:"⛴️",MUSEUM:"🏛️",MOVE:"🚇",STEAK:"🥩",ROOFTOP:"🍸",THEATER:"🎟️",VIEW:"🌉",BBQ:"🔥",SHOW:"🎭",MEMORIAL:"🕊️",DEPART:"✈️"};
-
-function renderTimeline(dayId){
-  const el=document.getElementById("timeline"+dayId.slice(-1));
-  el.innerHTML=days[dayId].map(x=>`
-    <div class="item">
-      <div class="time"><div class="dot"></div>${x[0]}</div>
-      <div class="card">
-        <div class="type">${icons[x[1]]||"•"} ${x[1]}</div>
-        <h3>${x[2]}</h3>
-        <p>${x[3]}</p>
-        ${x[4]?`<span class="pill">${x[4]}</span>`:""}
-      </div>
-    </div>`).join("");
-}
-Object.keys(days).forEach(renderTimeline);
-
-document.querySelectorAll(".tab").forEach(btn=>{
-  btn.addEventListener("click",()=>{
-    document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
-    document.querySelectorAll(".day").forEach(d=>d.classList.remove("active"));
-    btn.classList.add("active");
-    document.getElementById(btn.dataset.day).classList.add("active");
-    drawRoute(btn.dataset.day);
-    window.scrollTo({top:document.querySelector(".tabs").offsetTop,behavior:"smooth"});
-  });
-});
-
-const map=L.map("map",{zoomControl:true,scrollWheelZoom:false}).setView([40.735,-73.995],12);
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OpenStreetMap contributors"}).addTo(map);
-let routeLayer=null, markerLayer=L.layerGroup().addTo(map);
-
-function drawRoute(dayId){
-  if(routeLayer) map.removeLayer(routeLayer);
-  markerLayer.clearLayers();
-  const ids=routeDays[dayId];
-  const latlngs=ids.map(id=>coords[id]);
-  routeLayer=L.polyline(latlngs,{weight:4,opacity:.75}).addTo(map);
-  ids.forEach((id,i)=>{
-    const c=coords[id];
-    L.marker(c,{title:id}).addTo(markerLayer).bindPopup(`<b>${i+1}. ${id}</b>`);
-  });
-  map.fitBounds(routeLayer.getBounds(),{padding:[25,25]});
-}
-drawRoute("day1");
-
-document.getElementById("shareBtn").addEventListener("click",async()=>{
-  const data={title:"OUR NYC TRIP 🗽",text:"우리 뉴욕 여행 일정 · Oct 9–12, 2026",url:location.href};
-  try{
-    if(navigator.share) await navigator.share(data);
-    else {
-      await navigator.clipboard.writeText(location.href);
-      alert("링크가 복사됐어요! 카톡에 붙여넣으면 됩니다 💕");
-    }
-  }catch(e){}
-});
-</script>
+<script type="module" src="js/app.js"></script>
 </body>
 </html>
