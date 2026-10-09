@@ -1006,19 +1006,22 @@
     "time": null
    },
    "before": null,
-   "priority": "want",
+   "priority": "must",
    "selected": true,
    "note": "",
    "osm": null,
    "addedBy": null,
-   "updatedAt": 1791500000010,
+   "updatedAt": 1791523818898,
    "source": "google-list",
    "addr": "50 Prince St, SoHo",
    "tags": [
     "select"
    ],
    "namedSelected": true,
-   "googleHours": 1
+   "googleHours": 1,
+   "mealPref": null,
+   "cuisine": null,
+   "updatedBy": "dohyun1411"
   },
   {
    "id": "g-nyon",
