@@ -1,7 +1,7 @@
 // 오프라인에서도 앱이 열리게 하는 서비스 워커.
 // 앱 파일은 "네트워크 먼저, 안 되면 저장본" — 온라인이면 항상 최신 코드를 받고, 지하철 등 오프라인이면 마지막 저장본으로 연다.
 // 데이터(일정)는 원래 localStorage에 있으므로 따로 저장하지 않는다.
-const CACHE = "nyc-trip-v2";
+const CACHE = "nyc-trip-v3";
 const SHELL = [
   "./",
   "index.html",
@@ -47,7 +47,8 @@ self.addEventListener("fetch", (e) => {
   const isShell = url.origin === self.location.origin || url.href.startsWith("https://unpkg.com/leaflet@1.9.4/");
   if (!isShell) return; // API·지도 타일은 그대로
   e.respondWith(
-    fetch(req)
+    // 브라우저 HTTP 캐시(GitHub Pages는 10분)를 건너뛰고 서버에 새 버전이 있는지 매번 확인 (바뀐 게 없으면 304라 가볍다)
+    fetch(req, { cache: "no-cache" })
       .then((res) => {
         if (res.ok) {
           const copy = res.clone();
