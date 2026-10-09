@@ -8,6 +8,12 @@ export const MEAL_WINDOWS = {
   dinner: h(17, 21.5),
 };
 
+// 식당이 배정되지 않은 끼니에도 비워두는 "자유 식사" 시간 (시작 가능 시간대·소요시간)
+export const MEAL_SLOTS = {
+  lunch: { label: "점심", window: h(11.5, 14), dur: 60 },
+  dinner: { label: "저녁", window: h(17.5, 20.5), dur: 75 },
+};
+
 export const CATEGORIES = {
   restaurant: { label: "식당", icon: "🍴", dur: 75, meal: "any", hours: [h(11, 22.5)] },
   breakfast: { label: "아침", icon: "🥯", dur: 45, meal: "breakfast", hours: [h(7, 11)] },

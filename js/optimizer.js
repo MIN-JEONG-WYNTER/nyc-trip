@@ -2,13 +2,22 @@
 // 하루는 호텔에서 출발해 호텔로 돌아오며, 고정 일정은 체크인(첫날 시작)·체크아웃(마지막 날 끝)뿐이다.
 // 방식: 제약이 많은 곳부터 비용이 가장 적게 늘어나는 자리에 끼워 넣은 뒤,
 //       일부를 빼고 다시 넣는(ruin & recreate) 과정을 반복하며 개선한다.
+// 끼니: 하루 시간이 점심·저녁 시간대를 포함하면 그 끼니를 기대한다. 고른 식당이 없으면
+//       "자유 식사" 자리(위치 없음)를 비워두고, 그마저 못 넣으면 비용을 크게 매긴다.
 import { parseHours, toMin, weekdayOf } from "./hours.js";
-import { cat, MEAL_WINDOWS } from "./categories.js";
+import { cat, MEAL_WINDOWS, MEAL_SLOTS } from "./categories.js";
 import { travel } from "./geo.js";
 
 const UNSCHEDULED_PENALTY = { must: 5000, want: 1000 };
 const WAIT_WEIGHT = 0.25;
 const BALANCE_WEIGHT = 0.3;
+const FREE_MEAL_COST = 150; // 식당 대신 자유 식사로 채운 끼니
+const MISSING_MEAL_COST = 600; // 아예 식사 시간이 없는 끼니
+// 선호(어겨도 되지만 비용이 붙음): 끼니는 보통 시간에, 하루는 오전부터
+const MEAL_IDEAL = { lunch: [12 * 60, 13.5 * 60], dinner: [18 * 60, 19.5 * 60] };
+const MEAL_OFF_WEIGHT = 2; // 이상적인 식사 시간에서 1분 벗어날 때마다
+const LATE_START_AFTER = 10 * 60;
+const LATE_START_WEIGHT = 1; // 아침 10시 이후 첫 일정 시작이 1분 늦어질 때마다
 
 export function tripDate(meta, dayIdx) {
   const [y, m, d] = meta.startDate.split("-").map(Number);
@@ -46,7 +55,9 @@ function startRanges(p, dayIdx, meta) {
   let ranges = open.map(([o, cl]) => [o, cl - dur]).filter(([a, b]) => a <= b);
 
   if (c.meal === "any") {
-    ranges = [...intersect(ranges, MEAL_WINDOWS.lunch), ...intersect(ranges, MEAL_WINDOWS.dinner)];
+    // mealPref: 점심만 / 저녁만 / 상관없음(null)
+    const meals = p.mealPref === "lunch" || p.mealPref === "dinner" ? [p.mealPref] : ["lunch", "dinner"];
+    ranges = meals.flatMap((m) => intersect(ranges, MEAL_WINDOWS[m]));
   } else if (c.meal) {
     ranges = intersect(ranges, MEAL_WINDOWS[c.meal]);
   } else if (c.window) {
@@ -56,6 +67,7 @@ function startRanges(p, dayIdx, meta) {
 }
 
 function mealOf(p, start) {
+  if (p.freeMeal) return p.freeMeal;
   const meal = cat(p.category).meal;
   if (!meal) return null;
   if (meal !== "any") return meal;
@@ -71,6 +83,25 @@ export function createSolver(trip) {
 
   const ranges = {};
   for (const p of places) ranges[p.id] = Array.from({ length: nDays }, (_, d) => startRanges(p, d, meta));
+
+  // 날짜별로 기대하는 끼니와, 그 끼니의 자유 식사 자리(가상의 장소)
+  const expectedMeals = meta.days.map((day, d) =>
+    Object.entries(MEAL_SLOTS)
+      .filter(([, slot]) => intersect([slot.window], [toMin(day.start), toMin(day.end) - slot.dur]).length)
+      .map(([m]) => m),
+  );
+  const freeMealId = (m, d) => `__meal:${m}:${d}`;
+  expectedMeals.forEach((meals, d) =>
+    meals.forEach((m) => {
+      const id = freeMealId(m, d);
+      const slot = MEAL_SLOTS[m];
+      P[id] = { id, freeMeal: m, duration: slot.dur };
+      ranges[id] = Array.from({ length: nDays }, (_, x) =>
+        x === d ? intersect([slot.window], [toMin(meta.days[d].start), toMin(meta.days[d].end) - slot.dur]) : [],
+      );
+    }),
+  );
+  const isFree = (id) => id.startsWith("__meal:");
 
   const travelCache = new Map();
   const tr = (a, b) => {
@@ -92,10 +123,12 @@ export function createSolver(trip) {
     let waitSum = 0;
     const meals = new Set();
     const items = [];
+    let mealOff = 0;
     for (let i = 0; i < seq.length; i++) {
       const p = P[seq[i]];
       if (p.before && seq.indexOf(p.before) > -1 && seq.indexOf(p.before) < i) return null;
-      const leg = tr(prev, p);
+      // 자유 식사는 위치가 없으므로 직전 장소 근처에서 먹는 것으로 본다
+      const leg = p.freeMeal ? { min: 0, mode: "none" } : tr(prev, p);
       const arrive = t + leg.min;
       let start = null;
       let meal = null;
@@ -109,14 +142,18 @@ export function createSolver(trip) {
         break;
       }
       if (start == null) return null;
-      if (meal) meals.add(meal);
+      if (meal) {
+        meals.add(meal);
+        const ideal = MEAL_IDEAL[meal];
+        if (ideal) mealOff += Math.max(0, ideal[0] - start, start - ideal[1]);
+      }
       // 첫 장소 전 대기는 호텔에서 늦게 출발하면 되므로 대기로 치지 않는다
       const wait = i === 0 ? 0 : start - arrive;
-      items.push({ id: p.id, start, end: start + p.duration, travel: leg.min, mode: leg.mode, wait });
+      items.push({ id: p.id, start, end: start + p.duration, travel: leg.min, mode: leg.mode, wait, ...(p.freeMeal ? { freeMeal: p.freeMeal } : {}) });
       travelSum += leg.min;
       waitSum += wait;
       t = start + p.duration;
-      prev = p;
+      if (!p.freeMeal) prev = p;
     }
     const back = seq.length ? tr(prev, hotel) : { min: 0, mode: "none" };
     const dayEnd = toMin(day.end);
@@ -124,8 +161,13 @@ export function createSolver(trip) {
     // 하루에 몰리지 않도록, 그날 쓸 수 있는 시간 대비 사용한 시간의 제곱에 비례해 비용을 더한다
     const used = items.length ? t + back.min - (items[0].start - items[0].travel) : 0;
     const balance = (BALANCE_WEIGHT * used * used) / Math.max(60, dayEnd - toMin(day.start));
-    const cost = travelSum + back.min + WAIT_WEIGHT * waitSum + balance;
-    return { items, back, travelSum: travelSum + back.min, waitSum, cost };
+    const freeMeals = items.filter((it) => it.freeMeal).length;
+    // 오전을 쓸 수 있는 날인데 첫 일정이 늦게 시작하면 비용
+    const lateStart = items.length && toMin(day.start) <= LATE_START_AFTER ? Math.max(0, items[0].start - LATE_START_AFTER) : 0;
+    const missingMeals = expectedMeals[d].filter((m) => !meals.has(m)).length;
+    const cost = travelSum + back.min + WAIT_WEIGHT * waitSum + balance + FREE_MEAL_COST * freeMeals + MISSING_MEAL_COST * missingMeals +
+      MEAL_OFF_WEIGHT * mealOff + LATE_START_WEIGHT * lateStart;
+    return { items, back, travelSum: travelSum + back.min, waitSum, cost, meals };
   }
 
   // 날짜 사이 제약(before 관계가 같은 날이어야 함)
@@ -148,29 +190,47 @@ export function createSolver(trip) {
     return { seqs, evals, assign, unscheduled, cost };
   }
 
-  function bestInsertion(sol, id) {
+  function bestInsertion(sol, id, days = null) {
     let best = null;
+    const isMeal = !!cat(P[id].category).meal;
     for (let d = 0; d < nDays; d++) {
+      if (days && !days.includes(d)) continue;
       if (!dayAllowed(id, d, sol.assign)) continue;
-      const seq = sol.seqs[d];
-      for (let i = 0; i <= seq.length; i++) {
-        const cand = [...seq.slice(0, i), id, ...seq.slice(i)];
-        const ev = evalDay(d, cand);
-        if (!ev) continue;
-        const delta = ev.cost - sol.evals[d].cost;
-        if (!best || delta < best.delta) best = { d, seq: cand, ev, delta };
+      // 식당은 그날의 자유 식사 자리를 대신 차지할 수 있다
+      const bases = [sol.seqs[d]];
+      if (isMeal) for (const x of sol.seqs[d]) if (isFree(x)) bases.push(sol.seqs[d].filter((y) => y !== x));
+      for (const seq of bases) {
+        for (let i = 0; i <= seq.length; i++) {
+          const cand = [...seq.slice(0, i), id, ...seq.slice(i)];
+          const ev = evalDay(d, cand);
+          if (!ev) continue;
+          const delta = ev.cost - sol.evals[d].cost;
+          if (!best || delta < best.delta) best = { d, seq: cand, ev, delta };
+        }
       }
     }
     return best;
   }
 
+  function apply(sol, ins) {
+    for (const x of sol.seqs[ins.d]) if (!ins.seq.includes(x)) delete sol.assign[x];
+    sol.seqs[ins.d] = ins.seq;
+    sol.evals[ins.d] = ins.ev;
+    for (const x of ins.seq) sol.assign[x] = ins.d;
+  }
+
   function insertAll(sol, ids) {
     for (const id of ids) {
       const ins = bestInsertion(sol, id);
-      if (!ins) continue;
-      sol.seqs[ins.d] = ins.seq;
-      sol.evals[ins.d] = ins.ev;
-      sol.assign[id] = ins.d;
+      if (ins) apply(sol, ins);
+    }
+    // 식당으로 채우지 못한 끼니에 자유 식사 자리를 넣는다
+    for (let d = 0; d < nDays; d++) {
+      for (const m of expectedMeals[d]) {
+        if (sol.evals[d].meals.has(m)) continue;
+        const ins = bestInsertion(sol, freeMealId(m, d), [d]);
+        if (ins && ins.delta < 0) apply(sol, ins);
+      }
     }
     return makeSolution(sol.seqs);
   }
@@ -235,27 +295,39 @@ export function createSolver(trip) {
       return "하루 일정 시간 안에 다녀올 수 없어요 (거리·소요시간 확인)";
     }
     const meal = cat(p.category).meal;
-    if (meal && feasibleAlone.every((d) => sol.seqs[d].some((q) => cat(P[q].category).meal))) {
+    if (meal && feasibleAlone.every((d) => sol.seqs[d].some((q) => !isFree(q) && cat(P[q].category).meal))) {
       return "같은 식사 시간대에 다른 식당이 이미 있어요";
     }
     return "시간이 부족해요 — 다른 장소를 빼거나 하루 시간을 늘려보세요";
   }
 
-  return { solve, explain, evalDay, places: P };
+  return { solve, explain, evalDay, expectedMeals, places: P };
 }
 
 export function generateSchedule(trip, opts = {}) {
   const solver = createSolver(trip);
-  const sol = solver.solve(opts);
+  // 한 번의 탐색은 국소 최적해에 갇히기 쉬워, 짧게 여러 번 다시 시작해 가장 좋은 결과를 쓴다
+  const { timeBudgetMs = 900, restarts = 6, seed = Date.now() } = opts;
+  let sol = null;
+  for (let r = 0; r < restarts; r++) {
+    const cand = solver.solve({ timeBudgetMs: timeBudgetMs / restarts, seed: seed + r * 7919 });
+    if (!sol || cand.cost < sol.cost) sol = cand;
+  }
   return {
     generatedAt: Date.now(),
     inputsKey: inputsKey(trip),
-    days: sol.evals.map((ev) => ({ items: ev.items, back: { travel: ev.back.min, mode: ev.back.mode } })),
+    days: sol.evals.map((ev, d) => ({
+      items: ev.items,
+      back: { travel: ev.back.min, mode: ev.back.mode },
+      missingMeals: solver.expectedMeals[d].filter((m) => !ev.meals.has(m)),
+    })),
     unscheduled: sol.unscheduled.map((id) => ({ id, reason: solver.explain(id, sol) })),
     stats: {
       travel: sol.evals.reduce((a, e) => a + e.travelSum, 0),
       wait: sol.evals.reduce((a, e) => a + e.waitSum, 0),
+      freeMeals: sol.evals.reduce((a, e) => a + e.items.filter((it) => it.freeMeal).length, 0),
       iterations: sol.iterations,
+      cost: Math.round(sol.cost),
     },
   };
 }
@@ -264,7 +336,7 @@ export function generateSchedule(trip, opts = {}) {
 export function inputsKey(trip) {
   const ps = trip.places
     .filter((p) => p.selected && !p.deleted)
-    .map((p) => [p.id, p.lat, p.lon, p.category, p.duration, p.hours || "", p.priority, p.before || "", JSON.stringify(p.slots || []), JSON.stringify(p.pin || {})].join("|"))
+    .map((p) => [p.id, p.lat, p.lon, p.category, p.duration, p.hours || "", p.priority, p.mealPref || "", p.before || "", JSON.stringify(p.slots || []), JSON.stringify(p.pin || {})].join("|"))
     .sort();
   const m = trip.meta;
   return JSON.stringify([m.startDate, m.hotel.lat, m.hotel.lon, m.days, ps]);

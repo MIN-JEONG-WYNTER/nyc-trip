@@ -1,5 +1,5 @@
 import { Store, REPO, mergeTrips } from "./store.js";
-import { CATEGORIES, cat } from "./categories.js";
+import { CATEGORIES, MEAL_SLOTS, cat } from "./categories.js";
 import { parseHours, describeHours, fmtMin, toMin, weekdayOf } from "./hours.js";
 import { generateSchedule, inputsKey, tripDate } from "./optimizer.js";
 import { searchPlaces, reverseGeocode, lookupHours } from "./search.js";
@@ -8,6 +8,7 @@ const store = new Store();
 const $ = (sel) => document.querySelector(sel);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const WEEK_EN = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+const MEAL_PREF = { lunch: "점심만", dinner: "저녁만" };
 const MODE = { walk: "🚶 도보", subway: "🚇 지하철", none: "📍 바로 옆" };
 
 const ui = { view: "plan", day: null, filter: "all", draft: null, picking: false };
@@ -130,18 +131,35 @@ function renderPlan() {
   const day = sch.days[d] || { items: [], back: { travel: 0 } };
   const win = t.meta.days[d];
   const names = day.items.map((it) => placeById(it.id)?.name).filter(Boolean);
-  $("#dayHead").innerHTML = `<h2>DAY ${d + 1} · ${esc(dayLabel(d))}</h2><p>${names.length ? esc(names.slice(0, 3).join(" → ")) + (names.length > 3 ? " …" : "") : "아직 배정된 곳이 없어요"}</p>`;
+  const missing = (day.missingMeals || []).map((m) => MEAL_SLOTS[m].label);
+  $("#dayHead").innerHTML = `<h2>DAY ${d + 1} · ${esc(dayLabel(d))}</h2><p>${names.length ? esc(names.slice(0, 3).join(" → ")) + (names.length > 3 ? " …" : "") : "아직 배정된 곳이 없어요"}</p>
+    ${missing.length ? `<span class="pill warn">⚠️ ${missing.join("·")} 먹을 시간이 없어요</span>` : ""}`;
 
   const rows = [];
   const firstLeave = day.items.length ? day.items[0].start - day.items[0].travel : toMin(win.start);
   rows.push(anchorRow(d === 0 ? fmtMin(toMin(win.start)) : fmtMin(firstLeave), d === 0 ? "🏨 체크인" : "🏨 호텔 출발", trip().meta.hotel.name));
 
-  day.items.forEach((it, i) => {
-    const p = placeById(it.id);
-    if (!p) return;
+  let num = 0;
+  day.items.forEach((it) => {
     const legText = it.travel ? `${MODE[it.mode] || ""} 약 ${it.travel}분` : "";
     const waitText = it.wait >= 15 ? ` · ⏳ 여유 ${it.wait}분` : "";
     const isNow = now.dayIdx === d && now.min >= it.start && now.min < it.end;
+    if (it.freeMeal) {
+      rows.push(`
+      <div class="item free ${isNow ? "now" : ""}">
+        ${waitText ? `<div></div><div class="leg">${waitText.slice(3)}</div>` : ""}
+        <div class="time"><div class="dot"></div>${fmtMin(it.start)}<small>~${fmtMin(it.end)}</small></div>
+        <div class="card">
+          <div class="type">🍽 ${MEAL_SLOTS[it.freeMeal].label} · 자유 식사${isNow ? " · 지금" : ""}</div>
+          <h3>${MEAL_SLOTS[it.freeMeal].label} — 근처에서 자유롭게</h3>
+          <p>정해둔 식당이 없는 끼니예요. ‘장소’에서 식당을 추가하면 이 자리에 들어가요.</p>
+        </div>
+      </div>`);
+      return;
+    }
+    const p = placeById(it.id);
+    if (!p) return;
+    const i = num++;
     const c = cat(p.category);
     const pinned = p.pin && (p.pin.day != null || p.pin.time);
     const hi = hoursInfo(p);
@@ -209,9 +227,11 @@ function drawPlanMap() {
     return;
   }
   const pts = [hotel];
-  day.items.forEach((it, i) => {
+  let num = 0;
+  day.items.forEach((it) => {
     const p = placeById(it.id);
     if (!p) return;
+    const i = num++;
     pts.push([p.lat, p.lon]);
     L.marker([p.lat, p.lon], { icon: numIcon(i + 1) })
       .bindPopup(`<b>${i + 1}. ${esc(p.name)}</b><br>${fmtMin(it.start)}–${fmtMin(it.end)}`)
@@ -280,7 +300,7 @@ function renderPlaces() {
           .map((p) => {
             const hi = hoursInfo(p);
             const pinned = p.pin && (p.pin.day != null || p.pin.time);
-            const extra = [p.priority === "must" ? "꼭 가기" : "", pinned ? "📌 고정" : "", (p.slots || []).length ? `🎫 ${p.slots.length}개 시각` : ""].filter(Boolean).join(" · ");
+            const extra = [p.priority === "must" ? "꼭 가기" : "", p.category === "restaurant" && MEAL_PREF[p.mealPref] ? MEAL_PREF[p.mealPref] : "", pinned ? "📌 고정" : "", (p.slots || []).length ? `🎫 ${p.slots.length}개 시각` : ""].filter(Boolean).join(" · ");
             return `<div class="place ${p.selected ? "" : "off"}">
               <button class="check ${p.selected ? "on" : ""}" data-toggle="${esc(p.id)}" aria-label="갈 곳으로 선택">${p.selected ? "✓" : ""}</button>
               <div class="info" data-open="${esc(p.id)}"><b>${esc(p.name)}</b><span>${p.duration}분 · ${esc(hi.label)}${extra ? ` · ${esc(extra)}` : ""}</span></div>
@@ -485,6 +505,12 @@ function openSheet(place, isNew = false, keepDraft = false) {
         .join("")}</select></div>
       <div><label class="label" for="f-dur">머무는 시간(분)</label><input type="number" id="f-dur" min="10" max="600" step="5" value="${p.duration}"></div>
     </div>
+    <div class="field" id="f-meal-wrap" ${p.category === "restaurant" ? "" : "hidden"}><label for="f-meal">끼니</label>
+      <select id="f-meal">
+        <option value="" ${!p.mealPref ? "selected" : ""}>점심·저녁 상관없음</option>
+        <option value="lunch" ${p.mealPref === "lunch" ? "selected" : ""}>점심으로만</option>
+        <option value="dinner" ${p.mealPref === "dinner" ? "selected" : ""}>저녁으로만</option>
+      </select></div>
     <div class="field inline">
       <label class="toggle"><input type="checkbox" id="f-sel" ${p.selected ? "checked" : ""}> 갈 곳</label>
       <label class="toggle"><input type="checkbox" id="f-must" ${p.priority === "must" ? "checked" : ""}> 꼭 가기</label>
@@ -536,6 +562,7 @@ function openSheet(place, isNew = false, keepDraft = false) {
   $("#f-hours").addEventListener("input", hint);
   $("#f-cat").addEventListener("change", (e) => {
     $("#f-dur").value = cat(e.target.value).dur;
+    $("#f-meal-wrap").hidden = e.target.value !== "restaurant";
     hint();
   });
   $("#f-cancel").addEventListener("click", () => $("#sheet").close());
@@ -607,6 +634,7 @@ function readForm() {
   d.duration = Math.max(10, Math.min(600, Math.round(+$("#f-dur").value || cat(d.category).dur)));
   d.selected = $("#f-sel").checked;
   d.priority = $("#f-must").checked ? "must" : "want";
+  d.mealPref = d.category === "restaurant" ? $("#f-meal").value || null : null;
   const hours = $("#f-hours").value.trim() || null;
   if (hours !== d.hours) d.hoursSource = hours && hours === ui.draft.osmHours ? "osm" : hours ? "manual" : null;
   d.hours = hours;
