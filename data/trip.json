@@ -1,0 +1,2573 @@
+{
+ "schema": 1,
+ "meta": {
+  "title": "OUR NYC TRIP",
+  "startDate": "2026-10-09",
+  "hotel": {
+   "name": "Club Quarters World Trade Center",
+   "lat": 40.70983,
+   "lon": -74.01402
+  },
+  "days": [
+   {
+    "start": "15:00",
+    "end": "23:00"
+   },
+   {
+    "start": "08:00",
+    "end": "23:00"
+   },
+   {
+    "start": "08:00",
+    "end": "23:00"
+   },
+   {
+    "start": "07:30",
+    "end": "11:00"
+   }
+  ],
+  "updatedAt": 1791517416325,
+  "prefs": {
+   "maxDaily": 60
+  },
+  "maxDailyInit": true,
+  "requests": [
+   {
+    "id": "p-mv0f7pfpltt3",
+    "text": "첫째날 소호 쇼핑",
+    "by": null
+   }
+  ]
+ },
+ "places": [
+  {
+   "id": "seed-kith",
+   "name": "Kith Manhattan",
+   "lat": 40.72603,
+   "lon": -73.99432,
+   "category": "shop",
+   "duration": 45,
+   "hours": "Mo 10:00-21:00; Tu 10:00-21:00; We 10:00-21:00; Th 10:00-21:00; Fr 10:00-21:00; Sa 10:00-21:00; Su 11:00-20:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": true,
+   "note": "",
+   "osm": {
+    "type": "node",
+    "id": 5302774621
+   },
+   "addedBy": null,
+   "updatedAt": 1791513278753,
+   "updatedBy": null,
+   "fixedFromList": true,
+   "addr": "337 Lafayette St, NoHo",
+   "tags": [
+    "select"
+   ],
+   "googleHours": 1
+  },
+  {
+   "id": "seed-wgaca",
+   "name": "What Goes Around Comes Around",
+   "lat": 40.72272,
+   "lon": -74.00297,
+   "category": "shop",
+   "duration": 40,
+   "hours": "Mo 11:00-19:00; Tu 11:00-19:00; We 11:00-19:00; Th 11:00-19:00; Fr 11:00-19:00; Sa 11:00-19:00; Su 12:00-18:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": true,
+   "note": "",
+   "osm": {
+    "type": "node",
+    "id": 6052834497
+   },
+   "addedBy": null,
+   "updatedAt": 1791513279684,
+   "updatedBy": null,
+   "fixedFromList": true,
+   "addr": "351 W Broadway, SoHo",
+   "branches": [
+    {
+     "label": "113 Wooster St, SoHo",
+     "lat": 40.72488,
+     "lon": -74.00066,
+     "osm": null,
+     "hours": "Mo 11:00-19:00; Tu 11:00-19:00; We 11:00-19:00; Th 11:00-19:00; Fr 11:00-19:00; Sa 11:00-19:00; Su 12:00-18:00",
+     "googleHours": 1
+    }
+   ],
+   "branchesCheckedAt": 1791500000000,
+   "tags": [
+    "vintage"
+   ],
+   "googleHours": 1
+  },
+  {
+   "id": "seed-flyingsolo",
+   "name": "Flying Solo",
+   "lat": 40.72055,
+   "lon": -74.00415,
+   "category": "shop",
+   "duration": 40,
+   "hours": "Mo 11:30-19:00; Tu 11:30-19:00; We 11:30-19:00; Th 11:30-19:00; Fr 11:30-19:00; Sa 11:30-19:00; Su 11:30-19:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": true,
+   "note": "",
+   "osm": null,
+   "addedBy": null,
+   "updatedAt": 1760000000000,
+   "tags": [
+    "select"
+   ],
+   "googleHours": 1
+  },
+  {
+   "id": "seed-lindustrie",
+   "name": "L’Industrie Pizzeria · West Village",
+   "lat": 40.73323,
+   "lon": -74.00491,
+   "category": "restaurant",
+   "duration": 60,
+   "hours": "Mo 12:00-22:00; Tu 12:00-22:00; We 12:00-22:00; Th 12:00-22:00; Fr 12:00-22:00; Sa 12:00-22:00; Su 12:00-22:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "must",
+   "selected": true,
+   "note": "",
+   "osm": {
+    "type": "node",
+    "id": 12986801302
+   },
+   "addedBy": null,
+   "updatedAt": 1791517485723,
+   "cuisine": "pizza",
+   "fixedFromList": true,
+   "addr": "104 Christopher St, West Village",
+   "googleHours": 1,
+   "mealPref": null,
+   "updatedBy": null
+  },
+  {
+   "id": "seed-westvillage",
+   "name": "West Village 산책",
+   "lat": 40.7358,
+   "lon": -74.0036,
+   "category": "sight",
+   "duration": 60,
+   "hours": null,
+   "hoursSource": null,
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": true,
+   "note": "",
+   "osm": {
+    "type": "way",
+    "id": 949267308
+   },
+   "addedBy": null,
+   "updatedAt": 1791513282751,
+   "updatedBy": null
+  },
+  {
+   "id": "seed-liberty",
+   "name": "Statue of Liberty (Statue City Cruises)",
+   "lat": 40.70335,
+   "lon": -74.017,
+   "category": "tour",
+   "duration": 210,
+   "hours": "Mo 08:30-19:00; Tu 08:30-19:00; We 08:30-19:00; Th 08:30-19:00; Fr 08:30-19:00; Sa 08:30-19:00; Su 08:30-19:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "must",
+   "selected": false,
+   "note": "Battery Park에서 출발·복귀 (Liberty Island 포함)",
+   "osm": {
+    "type": "node",
+    "id": 1075650990
+   },
+   "addedBy": null,
+   "updatedAt": 1791515004201,
+   "updatedBy": null,
+   "googleHours": 1
+  },
+  {
+   "id": "seed-amnh",
+   "name": "American Museum of Natural History",
+   "lat": 40.78132,
+   "lon": -73.97399,
+   "category": "museum",
+   "duration": 180,
+   "hours": "Mo 10:00-17:30; Tu 10:00-17:30; We 10:00-17:30; Th 10:00-17:30; Fr 10:00-17:30; Sa 10:00-17:30; Su 10:00-17:30",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "must",
+   "selected": true,
+   "note": "",
+   "osm": {
+    "type": "way",
+    "id": 388436810
+   },
+   "addedBy": null,
+   "updatedAt": 1791517506103,
+   "updatedBy": null,
+   "fixedFromList": true,
+   "addr": "200 Central Park W",
+   "googleHours": 1,
+   "mealPref": null,
+   "cuisine": null
+  },
+  {
+   "id": "seed-keens",
+   "name": "Keens Steakhouse",
+   "lat": 40.75075,
+   "lon": -73.98649,
+   "category": "restaurant",
+   "duration": 90,
+   "hours": "Mo 11:45-22:30; Tu 11:45-22:30; We 11:45-22:30; Th 11:45-22:30; Fr 11:45-22:30; Sa 17:00-22:30; Su 17:00-21:30",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": {
+    "type": "node",
+    "id": 3068326556
+   },
+   "addedBy": null,
+   "updatedAt": 1791508545355,
+   "updatedBy": null,
+   "mealPref": "dinner",
+   "cuisine": "steak",
+   "fixedFromList": true,
+   "addr": "72 W 36th St, Midtown",
+   "googleHours": 1
+  },
+  {
+   "id": "seed-nubeluz",
+   "name": "Nubeluz",
+   "lat": 40.74554,
+   "lon": -73.98885,
+   "category": "bar",
+   "duration": 90,
+   "hours": "Mo 15:00-24:00; Tu 15:00-24:00; We 15:00-24:00; Th 13:00-01:00; Fr 13:00-01:00; Sa 11:00-01:00; Su 11:00-24:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": true,
+   "note": "",
+   "osm": null,
+   "addedBy": null,
+   "updatedAt": 1760000000000,
+   "fixedFromList": true,
+   "addr": "25 W 28th St 꼭대기 층, NoMad",
+   "googleHours": 1
+  },
+  {
+   "id": "seed-chicago-rush",
+   "name": "Chicago 러시 티켓 줄서기",
+   "lat": 40.76129,
+   "lon": -73.98508,
+   "category": "ticket",
+   "duration": 150,
+   "hours": "09:30-12:30",
+   "hoursSource": "manual",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": "seed-chicago",
+   "priority": "want",
+   "selected": true,
+   "note": "Ambassador Theatre 박스오피스",
+   "osm": null,
+   "addedBy": null,
+   "updatedAt": 1760000000000,
+   "fixedFromList": true,
+   "addr": "Ambassador Theatre · 219 W 49th St"
+  },
+  {
+   "id": "seed-chicago",
+   "name": "Chicago (Ambassador Theatre)",
+   "lat": 40.76129,
+   "lon": -73.98508,
+   "category": "show",
+   "duration": 150,
+   "hours": null,
+   "hoursSource": null,
+   "slots": [
+    {
+     "day": 2,
+     "time": "19:00"
+    }
+   ],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "must",
+   "selected": true,
+   "note": "공연 날짜·시각은 실제 공연 일정에 맞게 수정하세요",
+   "osm": null,
+   "addedBy": null,
+   "updatedAt": 1760000000000,
+   "fixedFromList": true,
+   "addr": "Ambassador Theatre · 219 W 49th St"
+  },
+  {
+   "id": "seed-dumbo",
+   "name": "DUMBO (Washington St 뷰)",
+   "lat": 40.7033,
+   "lon": -73.9883,
+   "category": "sight",
+   "duration": 60,
+   "hours": null,
+   "hoursSource": null,
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": true,
+   "note": "",
+   "osm": {
+    "type": "node",
+    "id": 2019020144
+   },
+   "addedBy": null,
+   "updatedAt": 1791513287214,
+   "updatedBy": null
+  },
+  {
+   "id": "seed-bark",
+   "name": "Bark Barbecue · Time Out Market",
+   "lat": 40.70367,
+   "lon": -73.99148,
+   "category": "restaurant",
+   "duration": 60,
+   "hours": "Mo 11:00-20:00; Tu 11:00-20:00; We 11:00-20:00; Th 11:00-20:00; Fr 11:00-21:00; Sa 11:00-21:00; Su 11:00-21:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "must",
+   "selected": true,
+   "note": "",
+   "osm": null,
+   "addedBy": null,
+   "updatedAt": 1791517470553,
+   "cuisine": "barbecue",
+   "fixedFromList": true,
+   "addr": "55 Water St 5층 (Time Out Market), DUMBO",
+   "googleHours": 1,
+   "mealPref": null,
+   "updatedBy": null
+  },
+  {
+   "id": "seed-oculus",
+   "name": "Oculus",
+   "lat": 40.71155,
+   "lon": -74.01345,
+   "category": "sight",
+   "duration": 30,
+   "hours": "Mo 00:00-24:00; Tu 00:00-24:00; We 00:00-24:00; Th 00:00-24:00; Fr 00:00-24:00; Sa 00:00-24:00; Su 00:00-24:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": true,
+   "note": "",
+   "osm": null,
+   "addedBy": null,
+   "updatedAt": 1760000000000,
+   "googleHours": 1
+  },
+  {
+   "id": "seed-911",
+   "name": "9/11 Memorial",
+   "lat": 40.7115,
+   "lon": -74.0134,
+   "category": "sight",
+   "duration": 45,
+   "hours": "Mo 09:00-19:00; Tu off; We 09:00-19:00; Th 09:00-19:00; Fr 09:00-19:00; Sa 09:00-19:00; Su 09:00-19:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": true,
+   "note": "",
+   "osm": {
+    "type": "way",
+    "id": 278033604
+   },
+   "addedBy": null,
+   "updatedAt": 1791513290181,
+   "updatedBy": null,
+   "googleHours": 1
+  },
+  {
+   "id": "p-mv09xd9sed92",
+   "name": "Nubiani",
+   "lat": 40.7469733,
+   "lon": -73.9853512,
+   "category": "restaurant",
+   "duration": 75,
+   "hours": "Mo-We 12:00-23:00; Th 12:00-00:00; Fr-Sa 12:00-01:00; Su 12:00-23:00",
+   "hoursSource": "osm",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": true,
+   "note": "315 5th Avenue, Manhattan",
+   "osm": {
+    "type": "node",
+    "id": 12662597204
+   },
+   "addedBy": null,
+   "updatedAt": 1791513290770,
+   "website": "https://www.nubianinyc.com/",
+   "updatedBy": null,
+   "cuisine": "korean",
+   "addr": "315 5th Ave 3층, Koreatown"
+  },
+  {
+   "id": "seed-nubiani",
+   "name": "Nubiani",
+   "lat": 40.74697,
+   "lon": -73.98535,
+   "category": "restaurant",
+   "duration": 75,
+   "hours": "Mo 12:00-23:00; Tu 12:00-23:00; We 12:00-23:00; Th 12:00-24:00; Fr 12:00-01:00; Sa 12:00-01:00; Su 12:00-23:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "Koreatown · 315 5th Ave (2층)",
+   "osm": {
+    "type": "node",
+    "id": 12662597204
+   },
+   "addedBy": null,
+   "updatedAt": 1791513290771,
+   "cuisine": "korean",
+   "website": "https://www.nubianinyc.com/",
+   "deleted": true,
+   "googleHours": 1
+  },
+  {
+   "id": "seed-benjamin",
+   "name": "Benjamin Prime",
+   "lat": 40.75145,
+   "lon": -73.97965,
+   "category": "restaurant",
+   "duration": 90,
+   "hours": "Mo 11:30-22:00; Tu 11:30-22:30; We 11:30-22:00; Th 11:30-22:00; Fr 11:30-22:00; Sa 16:00-22:00; Su 16:00-22:30",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": true,
+   "note": "",
+   "osm": {
+    "type": "node",
+    "id": 2714855288
+   },
+   "addedBy": null,
+   "updatedAt": 1791500000001,
+   "cuisine": "steak",
+   "addr": "23 E 40th St, Midtown",
+   "branches": [
+    {
+     "label": "Benjamin Steakhouse · 52 E 41st St (Dylan Hotel)",
+     "lat": 40.75136,
+     "lon": -73.97904,
+     "osm": null,
+     "hours": "Mo 07:00-22:00; Tu 07:00-22:00; We 07:00-22:00; Th 07:00-22:00; Fr 07:00-22:00; Sa 07:00-22:00; Su 07:00-22:00",
+     "googleHours": 1
+    }
+   ],
+   "branchesCheckedAt": 1791500000000,
+   "website": "https://benjaminsteakhouse.com/",
+   "googleHours": 1
+  },
+  {
+   "id": "g-leons",
+   "name": "Leon's Bagels",
+   "lat": 40.70985,
+   "lon": -74.00907,
+   "category": "restaurant",
+   "duration": 40,
+   "hours": "Mo 07:00-15:00; Tu 07:00-15:00; We 07:00-15:00; Th 07:00-15:00; Fr 07:00-16:00; Sa 07:00-16:00; Su 07:00-16:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": null,
+   "addedBy": null,
+   "updatedAt": 1791500000010,
+   "source": "google-list",
+   "cuisine": "sandwich",
+   "mealPref": "breakfast",
+   "addr": "12 John St, FiDi",
+   "branches": [
+    {
+     "label": "181 Mulberry St, Nolita",
+     "lat": 40.72087,
+     "lon": -73.9968,
+     "osm": null,
+     "hours": "Mo 08:00-15:00; Tu 08:00-15:00; We 08:00-15:00; Th 08:00-15:00; Fr 08:00-16:00; Sa 08:00-16:00; Su 08:00-16:00",
+     "googleHours": 1
+    }
+   ],
+   "branchesCheckedAt": 1791500000000,
+   "googleHours": 1
+  },
+  {
+   "id": "g-magnolia",
+   "name": "Magnolia Bakery",
+   "lat": 40.75929,
+   "lon": -73.98061,
+   "category": "cafe",
+   "duration": 30,
+   "hours": "Mo 08:00-22:00; Tu 08:00-22:00; We 08:00-22:00; Th 08:00-22:00; Fr 08:00-23:00; Sa 08:00-23:00; Su 08:00-22:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": {
+    "type": "node",
+    "id": 10236585208
+   },
+   "addedBy": null,
+   "updatedAt": 1791500000010,
+   "source": "google-list",
+   "addr": "1240 6th Ave, Rockefeller Center",
+   "branches": [
+    {
+     "label": "Upper West Side",
+     "lat": 40.77569,
+     "lon": -73.98028,
+     "osm": {
+      "type": "node",
+      "id": 2745005783
+     },
+     "hours": "Su-Th 07:30-22:00; Fr-Sa 07:30-24:00"
+    }
+   ],
+   "branchesCheckedAt": 1791500000000,
+   "googleHours": 1
+  },
+  {
+   "id": "g-howoo",
+   "name": "HOWOO",
+   "lat": 40.74632,
+   "lon": -73.985,
+   "category": "restaurant",
+   "duration": 90,
+   "hours": "Mo 17:00-23:00; Tu 17:00-23:00; We 17:00-23:00; Th 17:00-24:00; Fr 17:00-01:00; Sa 12:00-01:00; Su 12:00-23:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": {
+    "type": "node",
+    "id": 14158398134
+   },
+   "addedBy": null,
+   "updatedAt": 1791500000010,
+   "source": "google-list",
+   "cuisine": "korean",
+   "addr": "7 E 31st St, Koreatown",
+   "googleHours": 1
+  },
+  {
+   "id": "g-chelsea",
+   "name": "Chelsea Market",
+   "lat": 40.74244,
+   "lon": -74.00614,
+   "category": "sight",
+   "duration": 75,
+   "hours": "Mo 07:00-22:00; Tu 07:00-22:00; We 07:00-22:00; Th 07:00-22:00; Fr 07:00-22:00; Sa 07:00-22:00; Su 07:00-22:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": {
+    "type": "node",
+    "id": 1272608999
+   },
+   "addedBy": null,
+   "updatedAt": 1791514995045,
+   "source": "google-list",
+   "addr": "75 9th Ave, Chelsea",
+   "namedSelected": true,
+   "googleHours": 1,
+   "updatedBy": null
+  },
+  {
+   "id": "g-frontgeneral",
+   "name": "Front General Store",
+   "lat": 40.70255,
+   "lon": -73.98728,
+   "category": "shop",
+   "duration": 40,
+   "hours": "Mo 11:30-19:30; Tu 11:30-19:30; We 11:30-19:30; Th 11:30-19:30; Fr 11:30-19:30; Sa 11:30-19:30; Su 10:30-18:30",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": {
+    "type": "node",
+    "id": 6499926986
+   },
+   "addedBy": null,
+   "updatedAt": 1791500000010,
+   "source": "google-list",
+   "addr": "143 Front St, DUMBO",
+   "tags": [
+    "vintage"
+   ],
+   "googleHours": 1
+  },
+  {
+   "id": "g-stanselm",
+   "name": "St. Anselm",
+   "lat": 40.71429,
+   "lon": -73.95605,
+   "category": "restaurant",
+   "duration": 90,
+   "hours": "Mo 17:00-23:00; Tu 17:00-23:00; We 17:00-23:00; Th 17:00-23:00; Fr 17:00-23:00; Sa 12:00-23:00; Su 12:00-23:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": {
+    "type": "way",
+    "id": 279777184
+   },
+   "addedBy": null,
+   "updatedAt": 1791500000010,
+   "source": "google-list",
+   "cuisine": "steak",
+   "addr": "355 Metropolitan Ave, Williamsburg",
+   "googleHours": 1
+  },
+  {
+   "id": "g-regular",
+   "name": "REGULAR NYC",
+   "lat": 40.70804,
+   "lon": -74.01416,
+   "category": "restaurant",
+   "duration": 60,
+   "hours": "Mo 07:00-15:00; Tu 07:00-15:00; We 07:00-15:00; Th 07:00-15:00; Fr 07:00-15:00; Sa 07:00-16:00; Su 07:00-16:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": {
+    "type": "node",
+    "id": 12386824050
+   },
+   "addedBy": null,
+   "updatedAt": 1791500000010,
+   "source": "google-list",
+   "cuisine": "other",
+   "addr": "19 Rector St, FiDi",
+   "googleHours": 1
+  },
+  {
+   "id": "g-skylark",
+   "name": "The Skylark",
+   "lat": 40.75419,
+   "lon": -73.98886,
+   "category": "bar",
+   "duration": 90,
+   "hours": "Mo 17:00-24:00; Tu 17:00-24:00; We 17:00-24:00; Th 17:00-24:00; Fr 17:00-24:00; Sa off; Su off",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": {
+    "type": "node",
+    "id": 5752764087
+   },
+   "addedBy": null,
+   "updatedAt": 1791500000010,
+   "source": "google-list",
+   "addr": "200 W 39th St, Midtown · 루프탑 바",
+   "googleHours": 1
+  },
+  {
+   "id": "g-moma",
+   "name": "MoMA (The Museum of Modern Art)",
+   "lat": 40.76143,
+   "lon": -73.97762,
+   "category": "museum",
+   "duration": 150,
+   "hours": "Mo 10:30-17:30; Tu 10:30-17:30; We 10:30-17:30; Th 10:30-17:30; Fr 10:30-20:30; Sa 10:30-17:30; Su 10:30-17:30",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": {
+    "type": "way",
+    "id": 278346578
+   },
+   "addedBy": null,
+   "updatedAt": 1791500000010,
+   "source": "google-list",
+   "addr": "11 W 53rd St, Midtown",
+   "googleHours": 1
+  },
+  {
+   "id": "g-levain",
+   "name": "Levain Bakery",
+   "lat": 40.72619,
+   "lon": -73.99465,
+   "category": "cafe",
+   "duration": 20,
+   "hours": "Mo 07:00-24:00; Tu 07:00-24:00; We 07:00-24:00; Th 07:00-24:00; Fr 07:00-24:00; Sa 07:00-24:00; Su 07:00-24:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": {
+    "type": "node",
+    "id": 7243595520
+   },
+   "addedBy": null,
+   "updatedAt": 1791500000010,
+   "source": "google-list",
+   "addr": "340 Lafayette St, NoHo",
+   "googleHours": 1
+  },
+  {
+   "id": "g-roome",
+   "name": "ROOME",
+   "lat": 40.71725,
+   "lon": -73.99033,
+   "category": "other",
+   "duration": 45,
+   "hours": "Mo 12:00-19:00; Tu 12:00-19:00; We 12:00-19:00; Th 12:00-19:00; Fr 12:00-19:00; Sa 12:00-19:00; Su 12:00-19:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "종류를 몰라 ‘기타’로 넣었어요. 편집에서 바꿔주세요",
+   "osm": null,
+   "addedBy": null,
+   "updatedAt": 1791500000010,
+   "source": "google-list",
+   "addr": "324 Grand St, Lower East Side",
+   "googleHours": 1
+  },
+  {
+   "id": "g-katz",
+   "name": "Katz's Delicatessen",
+   "lat": 40.72227,
+   "lon": -73.98737,
+   "category": "restaurant",
+   "duration": 60,
+   "hours": "Mo 08:00-23:00; Tu 08:00-23:00; We 08:00-23:00; Th 08:00-23:00; Fr 08:00-23:30; Sa 00:00-24:00; Su 00:00-23:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": {
+    "type": "node",
+    "id": 1915398676
+   },
+   "addedBy": null,
+   "updatedAt": 1791500000010,
+   "source": "google-list",
+   "cuisine": "sandwich",
+   "addr": "205 E Houston St, Lower East Side",
+   "googleHours": 1
+  },
+  {
+   "id": "g-tiredthrift",
+   "name": "Tired Thrift",
+   "lat": 40.72388,
+   "lon": -73.95141,
+   "category": "shop",
+   "duration": 40,
+   "hours": "Mo 11:00-19:00; Tu 11:00-19:00; We 11:00-19:00; Th 11:00-19:00; Fr 11:00-19:00; Sa 11:00-19:00; Su 11:00-18:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": null,
+   "addedBy": null,
+   "updatedAt": 1791500000010,
+   "source": "google-list",
+   "addr": "10 Bedford Ave, Greenpoint",
+   "tags": [
+    "vintage"
+   ],
+   "googleHours": 1
+  },
+  {
+   "id": "g-guizio",
+   "name": "Guizio",
+   "lat": 40.7237,
+   "lon": -74.00075,
+   "category": "shop",
+   "duration": 30,
+   "hours": "Mo 11:00-20:00; Tu 11:00-20:00; We 11:00-20:00; Th 11:00-20:00; Fr 11:00-20:00; Sa 11:00-20:00; Su 11:00-19:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": null,
+   "addedBy": null,
+   "updatedAt": 1791500000010,
+   "source": "google-list",
+   "addr": "81 Greene St, SoHo",
+   "googleHours": 1
+  },
+  {
+   "id": "g-stussy",
+   "name": "Stüssy",
+   "lat": 40.7233,
+   "lon": -73.99598,
+   "category": "shop",
+   "duration": 30,
+   "hours": "Mo 11:00-19:00; Tu 11:00-19:00; We 11:00-19:00; Th 11:00-19:00; Fr 11:00-19:00; Sa 11:00-19:00; Su 12:00-18:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": true,
+   "note": "",
+   "osm": null,
+   "addedBy": null,
+   "updatedAt": 1791500000010,
+   "source": "google-list",
+   "addr": "50 Prince St, SoHo",
+   "tags": [
+    "select"
+   ],
+   "namedSelected": true,
+   "googleHours": 1
+  },
+  {
+   "id": "g-nyon",
+   "name": "New York or Nowhere (NYON)",
+   "lat": 40.72317,
+   "lon": -73.99718,
+   "category": "shop",
+   "duration": 30,
+   "hours": "Mo 11:00-19:00; Tu 11:00-19:00; We 11:00-19:00; Th 11:00-19:00; Fr 10:00-19:00; Sa 10:00-19:00; Su 10:00-19:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": {
+    "type": "node",
+    "id": 5152316164
+   },
+   "addedBy": null,
+   "updatedAt": 1791500000010,
+   "source": "google-list",
+   "addr": "250 Lafayette St, SoHo",
+   "tags": [
+    "select"
+   ],
+   "googleHours": 1
+  },
+  {
+   "id": "g-fishseddy",
+   "name": "Fishs Eddy",
+   "lat": 40.73867,
+   "lon": -73.99006,
+   "category": "shop",
+   "duration": 40,
+   "hours": "Mo 10:00-20:00; Tu 10:00-20:00; We 10:00-20:00; Th 10:00-20:00; Fr 10:00-20:00; Sa 10:00-20:00; Su 10:00-18:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": {
+    "type": "node",
+    "id": 2555136017
+   },
+   "addedBy": null,
+   "updatedAt": 1791500000010,
+   "source": "google-list",
+   "addr": "889 Broadway, Flatiron",
+   "googleHours": 1
+  },
+  {
+   "id": "g-wayan",
+   "name": "Wayan",
+   "lat": 40.72137,
+   "lon": -73.99509,
+   "category": "restaurant",
+   "duration": 90,
+   "hours": "Mo 12:00-15:30,17:30-23:00; Tu 12:00-15:30,17:30-23:00; We 12:00-15:30,17:30-23:00; Th 12:00-15:30,17:30-24:00; Fr 12:00-15:30,17:30-24:00; Sa 11:30-16:00,17:00-24:00; Su 11:30-16:00,17:00-23:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": {
+    "type": "node",
+    "id": 7075387185
+   },
+   "addedBy": null,
+   "updatedAt": 1791500000010,
+   "source": "google-list",
+   "cuisine": "asian",
+   "addr": "20 Spring St, Nolita · 인도네시아",
+   "googleHours": 1
+  },
+  {
+   "id": "g-westlight",
+   "name": "Westlight",
+   "lat": 40.7223,
+   "lon": -73.95654,
+   "category": "bar",
+   "duration": 90,
+   "hours": "Mo 16:00-23:00; Tu 16:00-24:00; We 16:00-24:00; Th 16:00-24:00; Fr 16:00-01:00; Sa 12:00-02:00; Su 12:00-24:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": {
+    "type": "node",
+    "id": 4406520514
+   },
+   "addedBy": null,
+   "updatedAt": 1791500000010,
+   "source": "google-list",
+   "addr": "111 N 12th St, Williamsburg · 루프탑 바",
+   "googleHours": 1
+  },
+  {
+   "id": "g-naminori",
+   "name": "Nami Nori",
+   "lat": 40.73022,
+   "lon": -74.00322,
+   "category": "restaurant",
+   "duration": 60,
+   "hours": "Mo 11:30-21:30; Tu 11:30-21:30; We 11:30-21:30; Th 11:30-21:30; Fr 11:30-22:00; Sa 11:30-22:00; Su 11:30-21:30",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": {
+    "type": "node",
+    "id": 14208263601
+   },
+   "addedBy": null,
+   "updatedAt": 1791500000010,
+   "source": "google-list",
+   "cuisine": "japanese",
+   "addr": "33 Carmine St, West Village · 테마키",
+   "googleHours": 1
+  },
+  {
+   "id": "g-elchato",
+   "name": "Taquería el Chato",
+   "lat": 40.72984,
+   "lon": -74.00043,
+   "category": "restaurant",
+   "duration": 45,
+   "hours": "Mo 12:00-22:00; Tu 12:00-22:00; We 12:00-22:00; Th 12:00-22:00; Fr 12:00-23:00; Sa 12:00-23:00; Su 12:00-22:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": null,
+   "addedBy": null,
+   "updatedAt": 1791500000010,
+   "source": "google-list",
+   "cuisine": "mexican",
+   "addr": "120 MacDougal St, Greenwich Village",
+   "googleHours": 1
+  },
+  {
+   "id": "g-kimskimbap",
+   "name": "KIM'S KIMBAP",
+   "lat": 40.73628,
+   "lon": -73.99734,
+   "category": "restaurant",
+   "duration": 40,
+   "hours": "Mo 11:00-21:00; Tu 11:00-21:00; We 11:00-21:00; Th 11:00-21:00; Fr 11:00-21:00; Sa 11:00-21:00; Su 11:00-21:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": null,
+   "addedBy": null,
+   "updatedAt": 1791500000010,
+   "source": "google-list",
+   "cuisine": "korean",
+   "addr": "496 6th Ave, Greenwich Village",
+   "googleHours": 1
+  },
+  {
+   "id": "g-aucheval",
+   "name": "Au Cheval",
+   "lat": 40.71812,
+   "lon": -74.00179,
+   "category": "restaurant",
+   "duration": 75,
+   "hours": "Mo 17:00-22:30; Tu 17:00-22:30; We 12:00-22:30; Th 12:00-22:30; Fr 12:00-23:30; Sa 11:00-15:00,17:00-23:30; Su 11:00-15:00,17:00-22:30",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": {
+    "type": "node",
+    "id": 6919152917
+   },
+   "addedBy": null,
+   "updatedAt": 1791500000010,
+   "source": "google-list",
+   "cuisine": "burger",
+   "addr": "33 Cortlandt Alley, Tribeca",
+   "googleHours": 1
+  },
+  {
+   "id": "g-burgerjoint",
+   "name": "Burger Joint",
+   "lat": 40.76417,
+   "lon": -73.97857,
+   "category": "restaurant",
+   "duration": 45,
+   "hours": "Mo 11:00-23:00; Tu 11:00-23:00; We 11:00-23:00; Th 11:00-23:00; Fr 11:00-23:00; Sa 11:00-23:00; Su 11:00-23:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": {
+    "type": "node",
+    "id": 6071549934
+   },
+   "addedBy": null,
+   "updatedAt": 1791500000010,
+   "source": "google-list",
+   "cuisine": "burger",
+   "addr": "119 W 56th St, Midtown",
+   "googleHours": 1
+  },
+  {
+   "id": "g-nougatine",
+   "name": "Nougatine by Jean-Georges",
+   "lat": 40.76903,
+   "lon": -73.98163,
+   "category": "restaurant",
+   "duration": 90,
+   "hours": "Mo 07:00-22:00; Tu 07:00-22:00; We 07:00-22:00; Th 07:00-22:00; Fr 07:00-22:00; Sa 08:00-22:00; Su 08:00-22:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": null,
+   "addedBy": null,
+   "updatedAt": 1791500000010,
+   "source": "google-list",
+   "cuisine": "french",
+   "addr": "1 Central Park W, Columbus Circle",
+   "googleHours": 1
+  },
+  {
+   "id": "g-met",
+   "name": "The Metropolitan Museum of Art",
+   "lat": 40.77944,
+   "lon": -73.96324,
+   "category": "museum",
+   "duration": 180,
+   "hours": "Mo 10:00-17:00; Tu 10:00-17:00; We off; Th 10:00-17:00; Fr 10:00-21:00; Sa 10:00-21:00; Su 10:00-17:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": {
+    "type": "relation",
+    "id": 3698894
+   },
+   "addedBy": null,
+   "updatedAt": 1791500000010,
+   "source": "google-list",
+   "addr": "1000 5th Ave, Upper East Side",
+   "googleHours": 1
+  },
+  {
+   "id": "g-summit",
+   "name": "SUMMIT One Vanderbilt",
+   "lat": 40.75277,
+   "lon": -73.97873,
+   "category": "sight",
+   "duration": 90,
+   "hours": "Mo 08:00-24:00; Tu 08:00-24:00; We 08:00-24:00; Th 08:00-24:00; Fr 08:00-24:00; Sa 08:00-24:00; Su 08:00-24:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": {
+    "type": "node",
+    "id": 10202468617
+   },
+   "addedBy": null,
+   "updatedAt": 1791500000010,
+   "source": "google-list",
+   "addr": "45 E 42nd St, Midtown · 전망대 (시간 지정 티켓)",
+   "googleHours": 1
+  },
+  {
+   "id": "g-birdland",
+   "name": "Birdland Jazz Club",
+   "lat": 40.75909,
+   "lon": -73.98972,
+   "category": "show",
+   "duration": 120,
+   "hours": "Mo 16:30-24:00; Tu 16:30-23:30; We 16:30-23:30; Th 16:30-23:30; Fr 16:30-24:00; Sa 16:30-24:00; Su 16:30-24:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "공연 시각을 정했으면 ‘정해진 시작 시각’에 넣어주세요",
+   "osm": {
+    "type": "node",
+    "id": 3573482095
+   },
+   "addedBy": null,
+   "updatedAt": 1791500000010,
+   "source": "google-list",
+   "addr": "315 W 44th St, Midtown",
+   "googleHours": 1
+  },
+  {
+   "id": "g-peterluger",
+   "name": "Peter Luger Steak House",
+   "lat": 40.70988,
+   "lon": -73.96251,
+   "category": "restaurant",
+   "duration": 90,
+   "hours": "Mo 11:45-21:30; Tu 11:45-21:30; We 11:45-21:30; Th 11:45-21:30; Fr 11:45-21:30; Sa 11:45-21:30; Su 11:45-21:30",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": {
+    "type": "node",
+    "id": 2483716076
+   },
+   "addedBy": null,
+   "updatedAt": 1791500000010,
+   "source": "google-list",
+   "cuisine": "steak",
+   "addr": "178 Broadway, Williamsburg",
+   "googleHours": 1
+  },
+  {
+   "id": "n-starbucks-reserve",
+   "name": "Starbucks Reserve Roastery",
+   "lat": 40.7416,
+   "lon": -74.0053,
+   "category": "cafe",
+   "duration": 45,
+   "hours": "Mo 07:30-22:00; Tu 07:30-22:00; We 07:30-22:00; Th 07:30-22:00; Fr 07:30-23:00; Sa 07:30-23:00; Su 07:30-22:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": null,
+   "addedBy": null,
+   "updatedAt": 1791514996699,
+   "tags": [],
+   "addr": "61 9th Ave, NY 10011",
+   "branches": [],
+   "branchesCheckedAt": 1791500000000,
+   "source": "request",
+   "googleHours": 1,
+   "updatedBy": null
+  },
+  {
+   "id": "n-century21",
+   "name": "Century 21",
+   "lat": 40.71046,
+   "lon": -74.01039,
+   "category": "shop",
+   "duration": 75,
+   "hours": "Mo 09:00-21:00; Tu 09:00-21:00; We 09:00-21:00; Th 09:00-21:00; Fr 09:00-21:00; Sa 09:00-21:00; Su 11:00-20:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": true,
+   "note": "",
+   "osm": null,
+   "addedBy": null,
+   "updatedAt": 1791500000020,
+   "tags": [],
+   "addr": "22 Cortlandt St, Manhattan, NY 10007",
+   "branches": [],
+   "branchesCheckedAt": 1791500000000,
+   "source": "request",
+   "googleHours": 1
+  },
+  {
+   "id": "n-victorias-secret",
+   "name": "Victoria's Secret PINK",
+   "lat": 40.722,
+   "lon": -73.99922,
+   "category": "shop",
+   "duration": 30,
+   "hours": "Mo 10:00-20:00; Tu 10:00-20:00; We 10:00-20:00; Th 10:00-20:00; Fr 10:00-20:00; Sa 10:00-20:00; Su 11:00-19:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": true,
+   "note": "",
+   "osm": null,
+   "addedBy": null,
+   "updatedAt": 1791500000020,
+   "tags": [],
+   "addr": "500 Broadway Spc 500, NY 10012",
+   "branches": [
+    {
+     "label": "593 Broadway, Manhattan",
+     "lat": 40.72504,
+     "lon": -73.99732,
+     "osm": {
+      "type": "node",
+      "id": 4455539694
+     },
+     "hours": null
+    },
+    {
+     "label": "Fort Greene Place, Brooklyn",
+     "lat": 40.6847,
+     "lon": -73.9765,
+     "osm": {
+      "type": "node",
+      "id": 4768477257
+     },
+     "hours": "Mo 10:00-20:00; Tu 10:00-20:00; We 10:00-20:00; Th 10:00-20:00; Fr 10:00-20:00; Sa 10:00-20:00; Su 11:00-19:00",
+     "googleHours": 1
+    },
+    {
+     "label": "100 West 33rd Street, Manhattan",
+     "lat": 40.74939,
+     "lon": -73.98987,
+     "osm": {
+      "type": "node",
+      "id": 2711422128
+     },
+     "hours": "Mo 10:00-21:00; Tu 10:00-21:00; We 10:00-21:00; Th 10:00-21:00; Fr 10:00-22:00; Sa 10:00-22:00; Su 10:00-21:00",
+     "googleHours": 1
+    },
+    {
+     "label": "640 5th Avenue, Manhattan",
+     "lat": 40.75944,
+     "lon": -73.9768,
+     "osm": {
+      "type": "node",
+      "id": 1428427573
+     },
+     "hours": "Mo 10:00-20:00; Tu 10:00-20:00; We 10:00-20:00; Th 10:00-20:00; Fr 10:00-20:00; Sa 10:00-20:00; Su 11:00-19:00",
+     "googleHours": 1
+    },
+    {
+     "label": "165 East 86th Street, Manhattan",
+     "lat": 40.77925,
+     "lon": -73.95459,
+     "osm": {
+      "type": "node",
+      "id": 7134809799
+     },
+     "hours": "Mo 10:00-20:00; Tu 10:00-20:00; We 10:00-20:00; Th 10:00-20:00; Fr 10:00-20:00; Sa 10:00-20:00; Su 11:00-19:00",
+     "googleHours": 1
+    },
+    {
+     "label": "54 The Promenade, Edgewater",
+     "lat": 40.80645,
+     "lon": -73.98884,
+     "osm": {
+      "type": "node",
+      "id": 3486847406
+     },
+     "hours": "Mo 10:00-20:00; Tu 10:00-20:00; We 10:00-20:00; Th 10:00-20:00; Fr 10:00-20:00; Sa 10:00-20:00; Su off",
+     "googleHours": 1
+    }
+   ],
+   "branchesCheckedAt": 1791500000000,
+   "source": "request",
+   "googleHours": 1
+  },
+  {
+   "id": "n-skims",
+   "name": "SKIMS",
+   "lat": 40.75943,
+   "lon": -73.97616,
+   "category": "shop",
+   "duration": 30,
+   "hours": "Mo-Sa 10:00-20:00; Su 11:00-19:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": true,
+   "note": "",
+   "osm": null,
+   "addedBy": null,
+   "updatedAt": 1791500000020,
+   "tags": [],
+   "addr": "647 5th Ave, NY 10022",
+   "branches": [],
+   "branchesCheckedAt": 1791500000000,
+   "source": "request",
+   "googleHours": 1
+  },
+  {
+   "id": "n-lululemon",
+   "name": "lululemon",
+   "lat": 40.72294,
+   "lon": -73.9992,
+   "category": "shop",
+   "duration": 30,
+   "hours": "Mo 10:00-21:00; Tu 10:00-21:00; We 10:00-21:00; Th 10:00-21:00; Fr 10:00-21:00; Sa 10:00-21:00; Su 10:00-20:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": true,
+   "note": "",
+   "osm": null,
+   "addedBy": null,
+   "updatedAt": 1791500000020,
+   "tags": [],
+   "addr": "524 Broadway, NY 10012",
+   "branches": [
+    {
+     "label": "426 West 14th Street, Manhattan",
+     "lat": 40.74134,
+     "lon": -74.00674,
+     "osm": {
+      "type": "node",
+      "id": 13740325211
+     },
+     "hours": "Mo 10:00-19:00; Tu 10:00-19:00; We 10:00-19:00; Th 10:00-19:00; Fr 10:00-19:00; Sa 10:00-19:00; Su 10:00-19:00",
+     "googleHours": 1
+    },
+    {
+     "label": "114 5th Avenue, Manhattan",
+     "lat": 40.73787,
+     "lon": -73.99252,
+     "osm": {
+      "type": "node",
+      "id": 5781183307
+     },
+     "hours": "Mo 10:00-20:00; Tu 10:00-20:00; We 10:00-20:00; Th 10:00-20:00; Fr 10:00-20:00; Sa 10:00-20:00; Su 10:00-19:00",
+     "googleHours": 1
+    },
+    {
+     "label": "313 Washington Street, Downtown",
+     "lat": 40.74047,
+     "lon": -74.02977,
+     "osm": {
+      "type": "node",
+      "id": 9081262466
+     },
+     "hours": "Mo 10:00-20:00; Tu 10:00-20:00; We 10:00-20:00; Th 10:00-20:00; Fr 10:00-20:00; Sa 10:00-20:00; Su 10:00-18:00",
+     "googleHours": 1
+    },
+    {
+     "label": "129 North 6th Street, Brooklyn",
+     "lat": 40.71788,
+     "lon": -73.95904,
+     "osm": {
+      "type": "node",
+      "id": 5774371491
+     },
+     "hours": "Mo 10:00-20:00; Tu 10:00-20:00; We 10:00-20:00; Th 10:00-20:00; Fr 10:00-20:00; Sa 10:00-20:00; Su 11:00-19:00",
+     "googleHours": 1
+    },
+    {
+     "label": "592 5th Avenue, Manhattan",
+     "lat": 40.75725,
+     "lon": -73.97841,
+     "osm": {
+      "type": "node",
+      "id": 663072725
+     },
+     "hours": "Mo 10:00-20:00; Tu 10:00-20:00; We 10:00-20:00; Th 10:00-20:00; Fr 10:00-20:00; Sa 10:00-20:00; Su 10:00-20:00",
+     "googleHours": 1
+    }
+   ],
+   "branchesCheckedAt": 1791500000000,
+   "source": "request",
+   "googleHours": 1
+  },
+  {
+   "id": "n-alo",
+   "name": "Alo",
+   "lat": 40.72322,
+   "lon": -73.99945,
+   "category": "shop",
+   "duration": 30,
+   "hours": "Mo 10:00-20:00; Tu 10:00-20:00; We 10:00-20:00; Th 10:00-20:00; Fr 10:00-20:00; Sa 10:00-20:00; Su 11:00-20:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": true,
+   "note": "",
+   "osm": null,
+   "addedBy": null,
+   "updatedAt": 1791500000020,
+   "tags": [],
+   "addr": "96 Spring St, NY 10012",
+   "branches": [
+    {
+     "label": "Bedford Avenue, Brooklyn",
+     "lat": 40.71579,
+     "lon": -73.95973,
+     "osm": {
+      "type": "node",
+      "id": 11108337438
+     },
+     "hours": "Mo 10:00-20:00; Tu 10:00-20:00; We 10:00-20:00; Th 10:00-20:00; Fr 10:00-20:00; Sa 10:00-20:00; Su 11:00-19:00",
+     "googleHours": 1
+    }
+   ],
+   "branchesCheckedAt": 1791500000000,
+   "source": "request",
+   "googleHours": 1
+  },
+  {
+   "id": "n-sephora",
+   "name": "Sephora",
+   "lat": 40.7241,
+   "lon": -73.99839,
+   "category": "shop",
+   "duration": 40,
+   "hours": "Mo 09:00-21:00; Tu 09:00-21:00; We 09:00-21:00; Th 09:00-21:00; Fr 09:00-21:00; Sa 09:00-21:00; Su 10:00-20:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": true,
+   "note": "",
+   "osm": null,
+   "addedBy": null,
+   "updatedAt": 1791500000020,
+   "tags": [],
+   "addr": "557 Broadway, NY 10012",
+   "branches": [
+    {
+     "label": "175 Broadway, Manhattan",
+     "lat": 40.71002,
+     "lon": -74.01003,
+     "osm": {
+      "type": "node",
+      "id": 13753275745
+     },
+     "hours": "Mo 09:00-19:00; Tu 09:00-19:00; We 09:00-19:00; Th 09:00-19:00; Fr 09:00-19:00; Sa 11:00-19:00; Su 11:00-19:00",
+     "googleHours": 1
+    },
+    {
+     "label": "210 Joralemon Street, Brooklyn",
+     "lat": 40.6924,
+     "lon": -73.99086,
+     "osm": {
+      "type": "node",
+      "id": 4772142949
+     },
+     "hours": "Mo 10:00-20:00; Tu 10:00-20:00; We 10:00-20:00; Th 10:00-20:00; Fr 10:00-20:00; Sa 10:00-20:00; Su 11:00-19:00",
+     "googleHours": 1
+    },
+    {
+     "label": "Mall Drive West, Journal Square",
+     "lat": 40.72652,
+     "lon": -74.03839,
+     "osm": {
+      "type": "way",
+      "id": 654086961
+     },
+     "hours": "Mo 11:00-20:00; Tu 11:00-20:00; We 11:00-20:00; Th 11:00-20:00; Fr 11:00-21:00; Sa 10:00-21:00; Su 11:00-19:00",
+     "googleHours": 1
+    },
+    {
+     "label": "3 Saint Marks Place, Manhattan",
+     "lat": 40.72956,
+     "lon": -73.98968,
+     "osm": {
+      "type": "node",
+      "id": 13899747348
+     },
+     "hours": "Mo 10:00-20:00; Tu 10:00-20:00; We 10:00-20:00; Th 10:00-20:00; Fr 10:00-20:00; Sa 10:00-20:00; Su 11:00-19:00",
+     "googleHours": 1
+    },
+    {
+     "label": "Albee Square, Brooklyn",
+     "lat": 40.69042,
+     "lon": -73.98331,
+     "osm": {
+      "type": "node",
+      "id": 12480632406
+     },
+     "hours": "Mo 10:00-20:00; Tu 10:00-20:00; We 10:00-20:00; Th 10:00-20:00; Fr 10:00-20:00; Sa 10:00-20:00; Su 11:00-20:00",
+     "googleHours": 1
+    },
+    {
+     "label": "40 East 14th Street, Manhattan",
+     "lat": 40.7349,
+     "lon": -73.99149,
+     "osm": {
+      "type": "node",
+      "id": 11997971643
+     },
+     "hours": "Mo 09:00-21:00; Tu 09:00-21:00; We 09:00-21:00; Th 09:00-21:00; Fr 09:00-21:00; Sa 09:00-21:00; Su 11:00-19:00",
+     "googleHours": 1
+    }
+   ],
+   "branchesCheckedAt": 1791500000000,
+   "source": "request",
+   "googleHours": 1
+  },
+  {
+   "id": "n-glossier",
+   "name": "Glossier",
+   "lat": 40.72243,
+   "lon": -73.99789,
+   "category": "shop",
+   "duration": 30,
+   "hours": "Mo 10:00-20:00; Tu 10:00-20:00; We 10:00-20:00; Th 10:00-20:00; Fr 10:00-20:00; Sa 10:00-20:00; Su 11:00-19:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": true,
+   "note": "",
+   "osm": null,
+   "addedBy": null,
+   "updatedAt": 1791500000020,
+   "tags": [],
+   "addr": "72 Spring St, NY 10012",
+   "branches": [
+    {
+     "label": "77 North 6th Street, Brooklyn",
+     "lat": 40.71896,
+     "lon": -73.96081,
+     "osm": {
+      "type": "node",
+      "id": 2839699879
+     },
+     "hours": "Mo 11:00-19:00; Tu 11:00-19:00; We 11:00-19:00; Th 11:00-19:00; Fr 11:00-19:00; Sa 11:00-19:00; Su 11:00-18:00",
+     "googleHours": 1
+    }
+   ],
+   "branchesCheckedAt": 1791500000000,
+   "source": "request",
+   "googleHours": 1
+  },
+  {
+   "id": "n-supreme",
+   "name": "Supreme",
+   "lat": 40.72119,
+   "lon": -73.99407,
+   "category": "shop",
+   "duration": 30,
+   "hours": "Mo 11:00-19:00; Tu 11:00-19:00; We 11:00-19:00; Th 11:00-19:00; Fr 11:00-19:00; Sa 11:00-19:00; Su 12:00-18:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": null,
+   "addedBy": null,
+   "updatedAt": 1791500000020,
+   "tags": [
+    "select"
+   ],
+   "addr": "190 Bowery, NY 10012",
+   "branches": [],
+   "branchesCheckedAt": 1791500000000,
+   "source": "request",
+   "googleHours": 1
+  },
+  {
+   "id": "n-ald",
+   "name": "Aimé Leon Dore",
+   "lat": 40.7223,
+   "lon": -73.9959,
+   "category": "shop",
+   "duration": 40,
+   "hours": "Mo 11:00-19:00; Tu 11:00-19:00; We 11:00-19:00; Th 11:00-19:00; Fr 11:00-19:00; Sa 11:00-19:00; Su 12:00-18:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": null,
+   "addedBy": null,
+   "updatedAt": 1791500000020,
+   "tags": [
+    "select"
+   ],
+   "addr": "224 Mulberry St, NY 10012",
+   "branches": [],
+   "branchesCheckedAt": 1791500000000,
+   "source": "request",
+   "googleHours": 1
+  },
+  {
+   "id": "n-dsm",
+   "name": "Dover Street Market",
+   "lat": 40.74414,
+   "lon": -73.98177,
+   "category": "shop",
+   "duration": 60,
+   "hours": "Mo 11:00-18:00; Tu 11:00-18:00; We 11:00-18:00; Th 11:00-19:00; Fr 11:00-19:00; Sa 11:00-19:00; Su 12:00-18:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": null,
+   "addedBy": null,
+   "updatedAt": 1791500000020,
+   "tags": [
+    "select"
+   ],
+   "addr": "160 Lexington Ave, NY 10016",
+   "branches": [],
+   "branchesCheckedAt": 1791500000000,
+   "source": "request",
+   "googleHours": 1
+  },
+  {
+   "id": "n-bode",
+   "name": "Bode",
+   "lat": 40.71571,
+   "lon": -73.99101,
+   "category": "shop",
+   "duration": 30,
+   "hours": "Mo 11:00-19:00; Tu 11:00-19:00; We 11:00-19:00; Th 11:00-19:00; Fr 11:00-19:00; Sa 11:00-19:00; Su 11:00-19:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": null,
+   "addedBy": null,
+   "updatedAt": 1791500000020,
+   "tags": [
+    "select"
+   ],
+   "addr": "58 Hester St, NY 10002",
+   "branches": [],
+   "branchesCheckedAt": 1791500000000,
+   "source": "request",
+   "googleHours": 1
+  },
+  {
+   "id": "n-reformation",
+   "name": "Reformation",
+   "lat": 40.72291,
+   "lon": -74.00077,
+   "category": "shop",
+   "duration": 30,
+   "hours": "Mo 11:00-20:00; Tu 11:00-20:00; We 11:00-20:00; Th 11:00-20:00; Fr 11:00-20:00; Sa 11:00-20:00; Su 11:00-19:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": null,
+   "addedBy": null,
+   "updatedAt": 1791500000020,
+   "tags": [],
+   "addr": "62 Greene St, NY 10012",
+   "branches": [
+    {
+     "label": "23 Howard Street, Manhattan",
+     "lat": 40.71938,
+     "lon": -74.00049,
+     "osm": {
+      "type": "node",
+      "id": 5923163685
+     },
+     "hours": "Mo 11:00-20:00; Tu 11:00-20:00; We 11:00-20:00; Th 11:00-20:00; Fr 11:00-20:00; Sa 11:00-20:00; Su 11:00-19:00",
+     "googleHours": 1
+    },
+    {
+     "label": "Ludlow Street, Manhattan",
+     "lat": 40.72097,
+     "lon": -73.98775,
+     "osm": {
+      "type": "node",
+      "id": 11196535069
+     },
+     "hours": "Mo 11:00-19:00; Tu 11:00-19:00; We 11:00-19:00; Th 11:00-19:00; Fr 11:00-19:00; Sa 11:00-19:00; Su 11:00-18:00",
+     "googleHours": 1
+    }
+   ],
+   "branchesCheckedAt": 1791500000000,
+   "source": "request",
+   "googleHours": 1
+  },
+  {
+   "id": "n-brandy",
+   "name": "Brandy Melville",
+   "lat": 40.7228,
+   "lon": -73.99927,
+   "category": "shop",
+   "duration": 30,
+   "hours": "Mo 11:00-19:00; Tu 11:00-19:00; We 11:00-19:00; Th 11:00-19:00; Fr 12:00-20:00; Sa 12:00-20:00; Su 11:00-19:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": null,
+   "addedBy": null,
+   "updatedAt": 1791500000020,
+   "tags": [],
+   "addr": "519 Broadway, NY 10012",
+   "branches": [],
+   "branchesCheckedAt": 1791500000000,
+   "source": "request",
+   "googleHours": 1
+  },
+  {
+   "id": "n-procell",
+   "name": "Procell",
+   "lat": 40.71997,
+   "lon": -73.99366,
+   "category": "shop",
+   "duration": 40,
+   "hours": "Mo 12:00-19:00; Tu 12:00-19:00; We 12:00-19:00; Th 12:00-19:00; Fr 12:00-19:00; Sa 12:00-19:00; Su 12:00-18:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": null,
+   "addedBy": null,
+   "updatedAt": 1791500000020,
+   "tags": [
+    "vintage"
+   ],
+   "addr": "5 Delancey St, NY 10002",
+   "branches": [],
+   "branchesCheckedAt": 1791500000000,
+   "source": "request",
+   "googleHours": 1
+  },
+  {
+   "id": "n-artistsfleas",
+   "name": "Artists & Fleas SoHo",
+   "lat": 40.72193,
+   "lon": -73.99957,
+   "category": "shop",
+   "duration": 45,
+   "hours": "Mo 11:00-20:00; Tu 11:00-20:00; We 11:00-20:00; Th 11:00-20:00; Fr 11:00-20:00; Sa 11:00-20:00; Su 11:00-19:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": null,
+   "addedBy": null,
+   "updatedAt": 1791500000020,
+   "tags": [
+    "vintage"
+   ],
+   "addr": "490 Broadway, NY 10012",
+   "branches": [],
+   "branchesCheckedAt": 1791500000000,
+   "source": "request",
+   "googleHours": 1
+  },
+  {
+   "id": "n-beacons",
+   "name": "Beacon's Closet",
+   "lat": 40.72363,
+   "lon": -73.95258,
+   "category": "shop",
+   "duration": 45,
+   "hours": "Mo 11:00-20:00; Tu 11:00-20:00; We 11:00-20:00; Th 11:00-20:00; Fr 11:00-20:00; Sa 11:00-20:00; Su 11:00-20:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": null,
+   "addedBy": null,
+   "updatedAt": 1791500000020,
+   "tags": [
+    "vintage"
+   ],
+   "addr": "74 Guernsey St, Brooklyn, NY 11222",
+   "branches": [],
+   "branchesCheckedAt": 1791500000000,
+   "source": "request",
+   "googleHours": 1
+  },
+  {
+   "id": "n-stelladallas",
+   "name": "10 Ft Single by Stella Dallas",
+   "lat": 40.71445,
+   "lon": -73.95353,
+   "category": "shop",
+   "duration": 45,
+   "hours": "Mo 12:00-19:15; Tu 12:00-19:15; We 12:00-19:15; Th 12:00-19:15; Fr 12:00-19:15; Sa 12:00-19:15; Su 12:00-19:15",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": null,
+   "addedBy": null,
+   "updatedAt": 1791500000020,
+   "tags": [
+    "vintage"
+   ],
+   "addr": "285 N 6th St, Brooklyn, NY 11211",
+   "branches": [],
+   "branchesCheckedAt": 1791500000000,
+   "source": "request",
+   "googleHours": 1
+  },
+  {
+   "id": "n-tokio7",
+   "name": "Tokio 7",
+   "lat": 40.72726,
+   "lon": -73.98614,
+   "category": "shop",
+   "duration": 30,
+   "hours": "Mo 11:00-19:00; Tu 11:00-19:00; We 11:00-19:00; Th 11:00-19:00; Fr 11:00-19:00; Sa 11:00-19:00; Su 11:00-19:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": null,
+   "addedBy": null,
+   "updatedAt": 1791500000020,
+   "tags": [
+    "vintage"
+   ],
+   "addr": "83 E 7th St, NY 10003",
+   "branches": [],
+   "branchesCheckedAt": 1791500000000,
+   "source": "request",
+   "googleHours": 1
+  },
+  {
+   "id": "n-housingworks",
+   "name": "Housing Works Thrift Shop",
+   "lat": 40.72478,
+   "lon": -73.99643,
+   "category": "shop",
+   "duration": 40,
+   "hours": "Mo-Sa 11:00-19:00; Su 11:00-17:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": false,
+   "note": "",
+   "osm": null,
+   "addedBy": null,
+   "updatedAt": 1791500000020,
+   "tags": [
+    "vintage"
+   ],
+   "addr": "130 Crosby St, NY 10012",
+   "branches": [],
+   "branchesCheckedAt": 1791500000000,
+   "source": "request",
+   "googleHours": 1
+  }
+ ],
+ "schedule": {
+  "generatedAt": 1791517511336,
+  "inputsKey": "[\"2026-10-09\",40.70983,-74.01402,[{\"start\":\"15:00\",\"end\":\"23:00\"},{\"start\":\"08:00\",\"end\":\"23:00\"},{\"start\":\"08:00\",\"end\":\"23:00\"},{\"start\":\"07:30\",\"end\":\"11:00\"}],[\"g-stussy|40.7233|-73.99598|shop|30|Mo 11:00-19:00; Tu 11:00-19:00; We 11:00-19:00; Th 11:00-19:00; Fr 11:00-19:00; Sa 11:00-19:00; Su 12:00-18:00|want|||[]|{\\\"day\\\":null,\\\"time\\\":null}|[]\",\"n-alo|40.72322|-73.99945|shop|30|Mo 10:00-20:00; Tu 10:00-20:00; We 10:00-20:00; Th 10:00-20:00; Fr 10:00-20:00; Sa 10:00-20:00; Su 11:00-20:00|want|||[]|{\\\"day\\\":null,\\\"time\\\":null}|[{\\\"label\\\":\\\"Bedford Avenue, Brooklyn\\\",\\\"lat\\\":40.71579,\\\"lon\\\":-73.95973,\\\"osm\\\":{\\\"type\\\":\\\"node\\\",\\\"id\\\":11108337438},\\\"hours\\\":\\\"Mo 10:00-20:00; Tu 10:00-20:00; We 10:00-20:00; Th 10:00-20:00; Fr 10:00-20:00; Sa 10:00-20:00; Su 11:00-19:00\\\",\\\"googleHours\\\":1}]\",\"n-century21|40.71046|-74.01039|shop|75|Mo 09:00-21:00; Tu 09:00-21:00; We 09:00-21:00; Th 09:00-21:00; Fr 09:00-21:00; Sa 09:00-21:00; Su 11:00-20:00|want|||[]|{\\\"day\\\":null,\\\"time\\\":null}|[]\",\"n-glossier|40.72243|-73.99789|shop|30|Mo 10:00-20:00; Tu 10:00-20:00; We 10:00-20:00; Th 10:00-20:00; Fr 10:00-20:00; Sa 10:00-20:00; Su 11:00-19:00|want|||[]|{\\\"day\\\":null,\\\"time\\\":null}|[{\\\"label\\\":\\\"77 North 6th Street, Brooklyn\\\",\\\"lat\\\":40.71896,\\\"lon\\\":-73.96081,\\\"osm\\\":{\\\"type\\\":\\\"node\\\",\\\"id\\\":2839699879},\\\"hours\\\":\\\"Mo 11:00-19:00; Tu 11:00-19:00; We 11:00-19:00; Th 11:00-19:00; Fr 11:00-19:00; Sa 11:00-19:00; Su 11:00-18:00\\\",\\\"googleHours\\\":1}]\",\"n-lululemon|40.72294|-73.9992|shop|30|Mo 10:00-21:00; Tu 10:00-21:00; We 10:00-21:00; Th 10:00-21:00; Fr 10:00-21:00; Sa 10:00-21:00; Su 10:00-20:00|want|||[]|{\\\"day\\\":null,\\\"time\\\":null}|[{\\\"label\\\":\\\"426 West 14th Street, Manhattan\\\",\\\"lat\\\":40.74134,\\\"lon\\\":-74.00674,\\\"osm\\\":{\\\"type\\\":\\\"node\\\",\\\"id\\\":13740325211},\\\"hours\\\":\\\"Mo 10:00-19:00; Tu 10:00-19:00; We 10:00-19:00; Th 10:00-19:00; Fr 10:00-19:00; Sa 10:00-19:00; Su 10:00-19:00\\\",\\\"googleHours\\\":1},{\\\"label\\\":\\\"114 5th Avenue, Manhattan\\\",\\\"lat\\\":40.73787,\\\"lon\\\":-73.99252,\\\"osm\\\":{\\\"type\\\":\\\"node\\\",\\\"id\\\":5781183307},\\\"hours\\\":\\\"Mo 10:00-20:00; Tu 10:00-20:00; We 10:00-20:00; Th 10:00-20:00; Fr 10:00-20:00; Sa 10:00-20:00; Su 10:00-19:00\\\",\\\"googleHours\\\":1},{\\\"label\\\":\\\"313 Washington Street, Downtown\\\",\\\"lat\\\":40.74047,\\\"lon\\\":-74.02977,\\\"osm\\\":{\\\"type\\\":\\\"node\\\",\\\"id\\\":9081262466},\\\"hours\\\":\\\"Mo 10:00-20:00; Tu 10:00-20:00; We 10:00-20:00; Th 10:00-20:00; Fr 10:00-20:00; Sa 10:00-20:00; Su 10:00-18:00\\\",\\\"googleHours\\\":1},{\\\"label\\\":\\\"129 North 6th Street, Brooklyn\\\",\\\"lat\\\":40.71788,\\\"lon\\\":-73.95904,\\\"osm\\\":{\\\"type\\\":\\\"node\\\",\\\"id\\\":5774371491},\\\"hours\\\":\\\"Mo 10:00-20:00; Tu 10:00-20:00; We 10:00-20:00; Th 10:00-20:00; Fr 10:00-20:00; Sa 10:00-20:00; Su 11:00-19:00\\\",\\\"googleHours\\\":1},{\\\"label\\\":\\\"592 5th Avenue, Manhattan\\\",\\\"lat\\\":40.75725,\\\"lon\\\":-73.97841,\\\"osm\\\":{\\\"type\\\":\\\"node\\\",\\\"id\\\":663072725},\\\"hours\\\":\\\"Mo 10:00-20:00; Tu 10:00-20:00; We 10:00-20:00; Th 10:00-20:00; Fr 10:00-20:00; Sa 10:00-20:00; Su 10:00-20:00\\\",\\\"googleHours\\\":1}]\",\"n-sephora|40.7241|-73.99839|shop|40|Mo 09:00-21:00; Tu 09:00-21:00; We 09:00-21:00; Th 09:00-21:00; Fr 09:00-21:00; Sa 09:00-21:00; Su 10:00-20:00|want|||[]|{\\\"day\\\":null,\\\"time\\\":null}|[{\\\"label\\\":\\\"175 Broadway, Manhattan\\\",\\\"lat\\\":40.71002,\\\"lon\\\":-74.01003,\\\"osm\\\":{\\\"type\\\":\\\"node\\\",\\\"id\\\":13753275745},\\\"hours\\\":\\\"Mo 09:00-19:00; Tu 09:00-19:00; We 09:00-19:00; Th 09:00-19:00; Fr 09:00-19:00; Sa 11:00-19:00; Su 11:00-19:00\\\",\\\"googleHours\\\":1},{\\\"label\\\":\\\"210 Joralemon Street, Brooklyn\\\",\\\"lat\\\":40.6924,\\\"lon\\\":-73.99086,\\\"osm\\\":{\\\"type\\\":\\\"node\\\",\\\"id\\\":4772142949},\\\"hours\\\":\\\"Mo 10:00-20:00; Tu 10:00-20:00; We 10:00-20:00; Th 10:00-20:00; Fr 10:00-20:00; Sa 10:00-20:00; Su 11:00-19:00\\\",\\\"googleHours\\\":1},{\\\"label\\\":\\\"Mall Drive West, Journal Square\\\",\\\"lat\\\":40.72652,\\\"lon\\\":-74.03839,\\\"osm\\\":{\\\"type\\\":\\\"way\\\",\\\"id\\\":654086961},\\\"hours\\\":\\\"Mo 11:00-20:00; Tu 11:00-20:00; We 11:00-20:00; Th 11:00-20:00; Fr 11:00-21:00; Sa 10:00-21:00; Su 11:00-19:00\\\",\\\"googleHours\\\":1},{\\\"label\\\":\\\"3 Saint Marks Place, Manhattan\\\",\\\"lat\\\":40.72956,\\\"lon\\\":-73.98968,\\\"osm\\\":{\\\"type\\\":\\\"node\\\",\\\"id\\\":13899747348},\\\"hours\\\":\\\"Mo 10:00-20:00; Tu 10:00-20:00; We 10:00-20:00; Th 10:00-20:00; Fr 10:00-20:00; Sa 10:00-20:00; Su 11:00-19:00\\\",\\\"googleHours\\\":1},{\\\"label\\\":\\\"Albee Square, Brooklyn\\\",\\\"lat\\\":40.69042,\\\"lon\\\":-73.98331,\\\"osm\\\":{\\\"type\\\":\\\"node\\\",\\\"id\\\":12480632406},\\\"hours\\\":\\\"Mo 10:00-20:00; Tu 10:00-20:00; We 10:00-20:00; Th 10:00-20:00; Fr 10:00-20:00; Sa 10:00-20:00; Su 11:00-20:00\\\",\\\"googleHours\\\":1},{\\\"label\\\":\\\"40 East 14th Street, Manhattan\\\",\\\"lat\\\":40.7349,\\\"lon\\\":-73.99149,\\\"osm\\\":{\\\"type\\\":\\\"node\\\",\\\"id\\\":11997971643},\\\"hours\\\":\\\"Mo 09:00-21:00; Tu 09:00-21:00; We 09:00-21:00; Th 09:00-21:00; Fr 09:00-21:00; Sa 09:00-21:00; Su 11:00-19:00\\\",\\\"googleHours\\\":1}]\",\"n-skims|40.75943|-73.97616|shop|30|Mo-Sa 10:00-20:00; Su 11:00-19:00|want|||[]|{\\\"day\\\":null,\\\"time\\\":null}|[]\",\"n-victorias-secret|40.722|-73.99922|shop|30|Mo 10:00-20:00; Tu 10:00-20:00; We 10:00-20:00; Th 10:00-20:00; Fr 10:00-20:00; Sa 10:00-20:00; Su 11:00-19:00|want|||[]|{\\\"day\\\":null,\\\"time\\\":null}|[{\\\"label\\\":\\\"593 Broadway, Manhattan\\\",\\\"lat\\\":40.72504,\\\"lon\\\":-73.99732,\\\"osm\\\":{\\\"type\\\":\\\"node\\\",\\\"id\\\":4455539694},\\\"hours\\\":null},{\\\"label\\\":\\\"Fort Greene Place, Brooklyn\\\",\\\"lat\\\":40.6847,\\\"lon\\\":-73.9765,\\\"osm\\\":{\\\"type\\\":\\\"node\\\",\\\"id\\\":4768477257},\\\"hours\\\":\\\"Mo 10:00-20:00; Tu 10:00-20:00; We 10:00-20:00; Th 10:00-20:00; Fr 10:00-20:00; Sa 10:00-20:00; Su 11:00-19:00\\\",\\\"googleHours\\\":1},{\\\"label\\\":\\\"100 West 33rd Street, Manhattan\\\",\\\"lat\\\":40.74939,\\\"lon\\\":-73.98987,\\\"osm\\\":{\\\"type\\\":\\\"node\\\",\\\"id\\\":2711422128},\\\"hours\\\":\\\"Mo 10:00-21:00; Tu 10:00-21:00; We 10:00-21:00; Th 10:00-21:00; Fr 10:00-22:00; Sa 10:00-22:00; Su 10:00-21:00\\\",\\\"googleHours\\\":1},{\\\"label\\\":\\\"640 5th Avenue, Manhattan\\\",\\\"lat\\\":40.75944,\\\"lon\\\":-73.9768,\\\"osm\\\":{\\\"type\\\":\\\"node\\\",\\\"id\\\":1428427573},\\\"hours\\\":\\\"Mo 10:00-20:00; Tu 10:00-20:00; We 10:00-20:00; Th 10:00-20:00; Fr 10:00-20:00; Sa 10:00-20:00; Su 11:00-19:00\\\",\\\"googleHours\\\":1},{\\\"label\\\":\\\"165 East 86th Street, Manhattan\\\",\\\"lat\\\":40.77925,\\\"lon\\\":-73.95459,\\\"osm\\\":{\\\"type\\\":\\\"node\\\",\\\"id\\\":7134809799},\\\"hours\\\":\\\"Mo 10:00-20:00; Tu 10:00-20:00; We 10:00-20:00; Th 10:00-20:00; Fr 10:00-20:00; Sa 10:00-20:00; Su 11:00-19:00\\\",\\\"googleHours\\\":1},{\\\"label\\\":\\\"54 The Promenade, Edgewater\\\",\\\"lat\\\":40.80645,\\\"lon\\\":-73.98884,\\\"osm\\\":{\\\"type\\\":\\\"node\\\",\\\"id\\\":3486847406},\\\"hours\\\":\\\"Mo 10:00-20:00; Tu 10:00-20:00; We 10:00-20:00; Th 10:00-20:00; Fr 10:00-20:00; Sa 10:00-20:00; Su off\\\",\\\"googleHours\\\":1}]\",\"p-mv09xd9sed92|40.7469733|-73.9853512|restaurant|75|Mo-We 12:00-23:00; Th 12:00-00:00; Fr-Sa 12:00-01:00; Su 12:00-23:00|want|||[]|{\\\"day\\\":null,\\\"time\\\":null}|[]\",\"seed-911|40.7115|-74.0134|sight|45|Mo 09:00-19:00; Tu off; We 09:00-19:00; Th 09:00-19:00; Fr 09:00-19:00; Sa 09:00-19:00; Su 09:00-19:00|want|||[]|{\\\"day\\\":null,\\\"time\\\":null}|[]\",\"seed-amnh|40.78132|-73.97399|museum|180|Mo 10:00-17:30; Tu 10:00-17:30; We 10:00-17:30; Th 10:00-17:30; Fr 10:00-17:30; Sa 10:00-17:30; Su 10:00-17:30|must|||[]|{\\\"day\\\":null,\\\"time\\\":null}|[]\",\"seed-bark|40.70367|-73.99148|restaurant|60|Mo 11:00-20:00; Tu 11:00-20:00; We 11:00-20:00; Th 11:00-20:00; Fr 11:00-21:00; Sa 11:00-21:00; Su 11:00-21:00|must|||[]|{\\\"day\\\":null,\\\"time\\\":null}|[]\",\"seed-benjamin|40.75145|-73.97965|restaurant|90|Mo 11:30-22:00; Tu 11:30-22:30; We 11:30-22:00; Th 11:30-22:00; Fr 11:30-22:00; Sa 16:00-22:00; Su 16:00-22:30|want|||[]|{\\\"day\\\":null,\\\"time\\\":null}|[{\\\"label\\\":\\\"Benjamin Steakhouse · 52 E 41st St (Dylan Hotel)\\\",\\\"lat\\\":40.75136,\\\"lon\\\":-73.97904,\\\"osm\\\":null,\\\"hours\\\":\\\"Mo 07:00-22:00; Tu 07:00-22:00; We 07:00-22:00; Th 07:00-22:00; Fr 07:00-22:00; Sa 07:00-22:00; Su 07:00-22:00\\\",\\\"googleHours\\\":1}]\",\"seed-chicago-rush|40.76129|-73.98508|ticket|150|09:30-12:30|want||seed-chicago|[]|{\\\"day\\\":null,\\\"time\\\":null}|[]\",\"seed-chicago|40.76129|-73.98508|show|150||must|||[{\\\"day\\\":2,\\\"time\\\":\\\"19:00\\\"}]|{\\\"day\\\":null,\\\"time\\\":null}|[]\",\"seed-dumbo|40.7033|-73.9883|sight|60||want|||[]|{\\\"day\\\":null,\\\"time\\\":null}|[]\",\"seed-flyingsolo|40.72055|-74.00415|shop|40|Mo 11:30-19:00; Tu 11:30-19:00; We 11:30-19:00; Th 11:30-19:00; Fr 11:30-19:00; Sa 11:30-19:00; Su 11:30-19:00|want|||[]|{\\\"day\\\":null,\\\"time\\\":null}|[]\",\"seed-kith|40.72603|-73.99432|shop|45|Mo 10:00-21:00; Tu 10:00-21:00; We 10:00-21:00; Th 10:00-21:00; Fr 10:00-21:00; Sa 10:00-21:00; Su 11:00-20:00|want|||[]|{\\\"day\\\":null,\\\"time\\\":null}|[]\",\"seed-lindustrie|40.73323|-74.00491|restaurant|60|Mo 12:00-22:00; Tu 12:00-22:00; We 12:00-22:00; Th 12:00-22:00; Fr 12:00-22:00; Sa 12:00-22:00; Su 12:00-22:00|must|||[]|{\\\"day\\\":null,\\\"time\\\":null}|[]\",\"seed-nubeluz|40.74554|-73.98885|bar|90|Mo 15:00-24:00; Tu 15:00-24:00; We 15:00-24:00; Th 13:00-01:00; Fr 13:00-01:00; Sa 11:00-01:00; Su 11:00-24:00|want|||[]|{\\\"day\\\":null,\\\"time\\\":null}|[]\",\"seed-oculus|40.71155|-74.01345|sight|30|Mo 00:00-24:00; Tu 00:00-24:00; We 00:00-24:00; Th 00:00-24:00; Fr 00:00-24:00; Sa 00:00-24:00; Su 00:00-24:00|want|||[]|{\\\"day\\\":null,\\\"time\\\":null}|[]\",\"seed-westvillage|40.7358|-74.0036|sight|60||want|||[]|{\\\"day\\\":null,\\\"time\\\":null}|[]\",\"seed-wgaca|40.72272|-74.00297|shop|40|Mo 11:00-19:00; Tu 11:00-19:00; We 11:00-19:00; Th 11:00-19:00; Fr 11:00-19:00; Sa 11:00-19:00; Su 12:00-18:00|want|||[]|{\\\"day\\\":null,\\\"time\\\":null}|[{\\\"label\\\":\\\"113 Wooster St, SoHo\\\",\\\"lat\\\":40.72488,\\\"lon\\\":-74.00066,\\\"osm\\\":null,\\\"hours\\\":\\\"Mo 11:00-19:00; Tu 11:00-19:00; We 11:00-19:00; Th 11:00-19:00; Fr 11:00-19:00; Sa 11:00-19:00; Su 12:00-18:00\\\",\\\"googleHours\\\":1}]\"],[\"첫째날 소호 쇼핑\"],{\"maxDaily\":60}]",
+  "days": [
+   {
+    "items": [
+     {
+      "id": "n-reformation",
+      "start": 917,
+      "end": 947,
+      "travel": 17,
+      "mode": "subway",
+      "wait": 0
+     },
+     {
+      "id": "g-guizio",
+      "start": 950,
+      "end": 980,
+      "travel": 3,
+      "mode": "walk",
+      "wait": 0
+     },
+     {
+      "id": "n-lululemon",
+      "start": 983,
+      "end": 1013,
+      "travel": 3,
+      "mode": "walk",
+      "wait": 0
+     },
+     {
+      "id": "n-alo",
+      "start": 1013,
+      "end": 1043,
+      "travel": 0,
+      "mode": "none",
+      "wait": 0
+     },
+     {
+      "id": "n-brandy",
+      "start": 1043,
+      "end": 1073,
+      "travel": 0,
+      "mode": "none",
+      "wait": 0
+     },
+     {
+      "id": "g-nyon",
+      "start": 1076,
+      "end": 1106,
+      "travel": 3,
+      "mode": "walk",
+      "wait": 0
+     },
+     {
+      "id": "g-stussy",
+      "start": 1109,
+      "end": 1139,
+      "travel": 3,
+      "mode": "walk",
+      "wait": 0
+     },
+     {
+      "id": "n-glossier",
+      "start": 1142,
+      "end": 1172,
+      "travel": 3,
+      "mode": "walk",
+      "wait": 0
+     },
+     {
+      "id": "seed-bark",
+      "start": 1190,
+      "end": 1250,
+      "travel": 18,
+      "mode": "subway",
+      "wait": 0
+     },
+     {
+      "id": "seed-dumbo",
+      "start": 1254,
+      "end": 1314,
+      "travel": 4,
+      "mode": "walk",
+      "wait": 0
+     }
+    ],
+    "back": {
+     "travel": 18,
+     "mode": "subway"
+    },
+    "missingMeals": [],
+    "districts": [
+     "soho",
+     "dumbo"
+    ]
+   },
+   {
+    "items": [
+     {
+      "id": "seed-kith",
+      "start": 600,
+      "end": 645,
+      "travel": 19,
+      "mode": "subway",
+      "wait": 0
+     },
+     {
+      "id": "n-housingworks",
+      "start": 660,
+      "end": 700,
+      "travel": 4,
+      "mode": "walk",
+      "wait": 11
+     },
+     {
+      "id": "n-artistsfleas",
+      "start": 707,
+      "end": 752,
+      "travel": 7,
+      "mode": "walk",
+      "wait": 0
+     },
+     {
+      "id": "n-ald",
+      "start": 757,
+      "end": 797,
+      "travel": 5,
+      "mode": "walk",
+      "wait": 0
+     },
+     {
+      "id": "__meal:lunch:1",
+      "start": 797,
+      "end": 857,
+      "travel": 0,
+      "mode": "none",
+      "wait": 0,
+      "freeMeal": "lunch"
+     },
+     {
+      "id": "seed-flyingsolo",
+      "start": 869,
+      "end": 909,
+      "travel": 12,
+      "mode": "walk",
+      "wait": 0
+     },
+     {
+      "id": "seed-wgaca",
+      "start": 913,
+      "end": 953,
+      "travel": 4,
+      "mode": "walk",
+      "wait": 0
+     },
+     {
+      "id": "n-sephora",
+      "start": 960,
+      "end": 1000,
+      "travel": 7,
+      "mode": "walk",
+      "wait": 0
+     },
+     {
+      "id": "seed-westvillage",
+      "start": 1015,
+      "end": 1075,
+      "travel": 15,
+      "mode": "subway",
+      "wait": 0
+     },
+     {
+      "id": "seed-lindustrie",
+      "start": 1080,
+      "end": 1140,
+      "travel": 5,
+      "mode": "walk",
+      "wait": 0
+     }
+    ],
+    "back": {
+     "travel": 20,
+     "mode": "subway"
+    },
+    "missingMeals": [],
+    "districts": [
+     "soho",
+     "westvillage"
+    ]
+   },
+   {
+    "items": [
+     {
+      "id": "seed-chicago-rush",
+      "start": 570,
+      "end": 720,
+      "travel": 32,
+      "mode": "subway",
+      "wait": 0
+     },
+     {
+      "id": "n-victorias-secret",
+      "start": 732,
+      "end": 762,
+      "travel": 12,
+      "mode": "walk",
+      "wait": 0,
+      "branch": 4
+     },
+     {
+      "id": "n-skims",
+      "start": 762,
+      "end": 792,
+      "travel": 0,
+      "mode": "none",
+      "wait": 0
+     },
+     {
+      "id": "__meal:lunch:2",
+      "start": 792,
+      "end": 852,
+      "travel": 0,
+      "mode": "none",
+      "wait": 0,
+      "freeMeal": "lunch"
+     },
+     {
+      "id": "__meal:dinner:2",
+      "start": 1050,
+      "end": 1125,
+      "travel": 0,
+      "mode": "none",
+      "wait": 198,
+      "freeMeal": "dinner"
+     },
+     {
+      "id": "seed-chicago",
+      "start": 1140,
+      "end": 1290,
+      "travel": 13,
+      "mode": "walk",
+      "wait": 2
+     }
+    ],
+    "back": {
+     "travel": 32,
+     "mode": "subway"
+    },
+    "missingMeals": [],
+    "districts": [
+     "midtown"
+    ]
+   },
+   {
+    "items": [
+     {
+      "id": "seed-911",
+      "start": 540,
+      "end": 585,
+      "travel": 3,
+      "mode": "walk",
+      "wait": 0
+     },
+     {
+      "id": "seed-oculus",
+      "start": 585,
+      "end": 615,
+      "travel": 0,
+      "mode": "none",
+      "wait": 0
+     }
+    ],
+    "back": {
+     "travel": 3,
+     "mode": "walk"
+    },
+    "missingMeals": [],
+    "districts": [
+     "downtown"
+    ]
+   }
+  ],
+  "suggest": {
+   "remove": [],
+   "add": [
+    {
+     "id": "g-magnolia",
+     "day": 2,
+     "extra": 0
+    },
+    {
+     "id": "g-levain",
+     "day": 1,
+     "extra": 0
+    },
+    {
+     "id": "g-moma",
+     "day": 2,
+     "extra": 1
+    },
+    {
+     "id": "n-supreme",
+     "day": 1,
+     "extra": 5
+    },
+    {
+     "id": "n-procell",
+     "day": 1,
+     "extra": 7
+    }
+   ]
+  },
+  "unscheduled": [
+   {
+    "id": "seed-amnh",
+    "reason": "하루 이동 60분 이내에 맞추느라 뺐어요 (꼭 가기로 바꾸면 넣어요)"
+   },
+   {
+    "id": "seed-nubeluz",
+    "reason": "하루 이동 60분 이내에 맞추느라 뺐어요 (꼭 가기로 바꾸면 넣어요)"
+   },
+   {
+    "id": "p-mv09xd9sed92",
+    "reason": "하루 이동 60분 이내에 맞추느라 뺐어요 (꼭 가기로 바꾸면 넣어요)"
+   },
+   {
+    "id": "seed-benjamin",
+    "reason": "하루 이동 60분 이내에 맞추느라 뺐어요 (꼭 가기로 바꾸면 넣어요)"
+   },
+   {
+    "id": "n-century21",
+    "reason": "하루 이동 60분 이내에 맞추느라 뺐어요 (꼭 가기로 바꾸면 넣어요)"
+   }
+  ],
+  "stats": {
+   "travel": 265,
+   "wait": 211,
+   "freeMeals": 3,
+   "iterations": 316,
+   "cost": 11310
+  },
+  "by": null
+ }
+}
