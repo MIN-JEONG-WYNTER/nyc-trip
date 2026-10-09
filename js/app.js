@@ -1,13 +1,14 @@
-import { Store, REPO, mergeTrips } from "./store.js";
+import { Store, REPO, mergeTrips, activeRequests } from "./store.js";
 import { CATEGORIES, CUISINES, MEAL_SLOTS, cat, kindOf } from "./categories.js";
 import { DISTRICTS } from "./areas.js";
 import { parseHours, describeHours, fmtMin, toMin, weekdayOf } from "./hours.js";
 import { generateSchedule, applySuggestion, inputsKey, tripDate } from "./optimizer.js";
-import { parseRequest, describeRule, applyRequests } from "./requests.js";
+import { parseRequest, describeRule, applyRequests, REQUEST_HINT } from "./requests.js";
 import { searchPlaces, reverseGeocode, lookupHours, findBranches, fillBranchHours } from "./search.js";
 
 const store = new Store();
 const $ = (sel) => document.querySelector(sel);
+const num = (v) => (Number.isFinite(+v) ? +v : 0);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const WEEK_EN = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 const MEAL_PREF = { breakfast: "아침만", lunch: "점심만", dinner: "저녁만" };
@@ -18,10 +19,17 @@ const ui = { view: "plan", day: null, filter: "all", draft: null, picking: false
 const trip = () => store.trip;
 const livePlaces = () => trip().places.filter((p) => !p.deleted);
 const placeById = (id) => trip().places.find((p) => p.id === id);
+// 일정 화면용: 삭제된 장소는 다시 만들기 전이라도 보이지 않게
+const livePlaceById = (id) => {
+  const p = placeById(id);
+  return p && !p.deleted ? p : null;
+};
 const newId = () => `p-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
 function toast(msg, ms = 2200) {
   const el = $("#toast");
+  const host = $("#sheet")?.open ? $("#sheet") : document.body;
+  if (el.parentElement !== host) host.appendChild(el);
   el.textContent = msg;
   el.hidden = false;
   clearTimeout(toast.t);
@@ -31,9 +39,9 @@ function toast(msg, ms = 2200) {
 const fmtDur = (min) => (min >= 60 ? `${Math.floor(min / 60)}시간${min % 60 ? ` ${min % 60}분` : ""}` : `${min}분`);
 // 하루 이동 합계 (도보·지하철 따로)
 function dayTravel(day) {
-  const legs = [...day.items.map((it) => ({ min: it.travel, mode: it.mode })), { min: day.back?.travel || 0, mode: day.back?.mode }];
-  const sum = (m) => legs.filter((l) => l.mode === m).reduce((a, l) => a + (l.min || 0), 0);
-  return { walk: sum("walk"), subway: sum("subway"), total: legs.reduce((a, l) => a + (l.min || 0), 0) };
+  const legs = [...day.items.map((it) => ({ min: num(it.travel), mode: it.mode })), { min: num(day.back?.travel), mode: day.back?.mode }];
+  const sum = (m) => legs.filter((l) => l.mode === m).reduce((a, l) => a + l.min, 0);
+  return { walk: sum("walk"), subway: sum("subway"), total: legs.reduce((a, l) => a + l.min, 0) };
 }
 const travelText = (t) => `${fmtDur(t.total)}${t.total ? ` (🚶 ${fmtDur(t.walk)} · 🚇 ${fmtDur(t.subway)})` : ""}`;
 
@@ -77,6 +85,8 @@ async function attachBranches(id) {
   const found = await findBranches(p, trip().meta.hotel).catch(() => null);
   if (!found) return null;
   const branches = found.length ? await fillBranchHours(found) : [];
+  const cur = livePlaceById(id);
+  if (!cur || cur.branches?.length) return 0; // 그 사이 지워졌거나 직접 분점을 정했으면 두기
   store.updatePlace(id, { branches, branchesCheckedAt: Date.now() });
   return branches.length;
 }
@@ -114,6 +124,7 @@ function renderHeader() {
 }
 
 function setView(view) {
+  if (view !== "places" && ui.picking) stopPicking(false); // 다른 탭으로 가면 위치 고르기 취소
   ui.view = view;
   document.querySelectorAll(".nav").forEach((b) => b.classList.toggle("active", b.dataset.view === view));
   document.querySelectorAll(".view").forEach((v) => v.classList.toggle("active", v.id === `view-${view}`));
@@ -159,8 +170,8 @@ function renderPlan() {
   const d = ui.day;
   const day = sch.days[d] || { items: [], back: { travel: 0 } };
   const win = t.meta.days[d];
-  const names = day.items.map((it) => placeById(it.id)?.name).filter(Boolean);
-  const missing = (day.missingMeals || []).map((m) => MEAL_SLOTS[m].label);
+  const names = day.items.map((it) => livePlaceById(it.id)?.name).filter(Boolean);
+  const missing = (day.missingMeals || []).map((m) => MEAL_SLOTS[m]?.label).filter(Boolean);
   $("#dayHead").innerHTML = `<h2>DAY ${d + 1} · ${esc(dayLabel(d))}</h2><p>${names.length ? esc(names.slice(0, 3).join(" → ")) + (names.length > 3 ? " …" : "") : "아직 배정된 곳이 없어요"}</p>
     ${day.items.length ? `<span class="pill">🧭 이날 이동 ${travelText(dayTravel(day))}</span>` : ""}
     ${day.districts?.length ? `<span class="pill">📍 ${day.districts.map((k) => esc(DISTRICTS[k]?.label || "외곽")).join(" + ")}</span>` : ""}
@@ -171,10 +182,10 @@ function renderPlan() {
   const firstLeave = day.items.length ? day.items[0].start - day.items[0].travel : toMin(win.start);
   rows.push(anchorRow(d === 0 ? fmtMin(toMin(win.start)) : fmtMin(firstLeave), d === 0 ? "🏨 체크인" : "🏨 호텔 출발", trip().meta.hotel.name));
 
-  let num = 0;
+  let order = 0;
   day.items.forEach((it) => {
-    const legText = it.travel ? `${MODE[it.mode] || ""} 약 ${it.travel}분` : "";
-    const waitText = it.wait >= 15 ? ` · ⏳ 여유 ${it.wait}분` : "";
+    const legText = it.travel ? `${MODE[it.mode] || ""} 약 ${num(it.travel)}분` : "";
+    const waitText = num(it.wait) >= 15 ? ` · ⏳ 여유 ${num(it.wait)}분` : "";
     const isNow = now.dayIdx === d && now.min >= it.start && now.min < it.end;
     if (it.freeMeal) {
       rows.push(`
@@ -182,16 +193,16 @@ function renderPlan() {
         ${waitText ? `<div></div><div class="leg">${waitText.slice(3)}</div>` : ""}
         <div class="time"><div class="dot"></div>${fmtMin(it.start)}<small>~${fmtMin(it.end)}</small></div>
         <div class="card">
-          <div class="type">🍽 ${MEAL_SLOTS[it.freeMeal].label} · 자유 식사${isNow ? " · 지금" : ""}</div>
-          <h3>${MEAL_SLOTS[it.freeMeal].label} — 근처에서 자유롭게</h3>
+          <div class="type">🍽 ${esc(MEAL_SLOTS[it.freeMeal]?.label || "식사")} · 자유 식사${isNow ? " · 지금" : ""}</div>
+          <h3>${esc(MEAL_SLOTS[it.freeMeal]?.label || "식사")} — 근처에서 자유롭게</h3>
           <p>정해둔 식당이 없는 끼니예요. ‘장소’에서 식당을 추가하면 이 자리에 들어가요.</p>
         </div>
       </div>`);
       return;
     }
-    const p = placeById(it.id);
+    const p = livePlaceById(it.id);
     if (!p) return;
-    const i = num++;
+    const i = order++;
     const c = kindOf(p);
     const pinned = p.pin && (p.pin.day != null || p.pin.time);
     const hi = hoursInfo(p);
@@ -208,7 +219,7 @@ function renderPlan() {
           ${pinned ? '<span class="pill pin">📌 고정</span>' : ""}
           ${hi.ok ? "" : '<span class="pill warn">영업시간 미확인</span>'}
           <div class="card-actions">
-            <button data-act="pin" data-id="${esc(p.id)}" data-start="${it.start}">${pinned ? "고정 해제" : "📌 이 시간 고정"}</button>
+            <button data-act="pin" data-id="${esc(p.id)}" data-start="${num(it.start)}">${pinned ? "고정 해제" : "📌 이 시간 고정"}</button>
             <button data-act="edit" data-id="${esc(p.id)}">편집</button>
             <a href="${esc(gmapsUrl(p, locOf(p, it)))}" target="_blank" rel="noopener">구글 지도</a>
           </div>
@@ -216,9 +227,9 @@ function renderPlan() {
       </div>`);
   });
 
-  const lastEnd = day.items.length ? day.items[day.items.length - 1].end + day.back.travel : null;
+  const lastEnd = day.items.length ? num(day.items[day.items.length - 1].end) + num(day.back.travel) : null;
   const isLast = d === t.meta.days.length - 1;
-  const backLeg = day.items.length && day.back.travel ? `${MODE[day.back.mode] || ""} 약 ${day.back.travel}분` : "";
+  const backLeg = day.items.length && day.back.travel ? `${MODE[day.back.mode] || ""} 약 ${num(day.back.travel)}분` : "";
   rows.push(
     anchorRow(
       isLast ? win.end : lastEnd != null ? fmtMin(lastEnd) : "",
@@ -259,8 +270,8 @@ function renderSuggestions(sch) {
       <button data-sg="${act}" data-id="${esc(p.id)}">${label}</button></div>`;
   };
   $("#suggestions").innerHTML = `<div class="map-title"><h3>💡 이동 줄이기 추천</h3><span>하나씩 적용했을 때 기준</span></div>
-    ${remove.length ? `<div class="sg-title">빼면 이동이 줄어드는 곳</div>` + remove.map((x) => row(x, `DAY ${x.day + 1}에서 빼면 이동 <b>−${x.save}분</b>`, "hold", "보류로")).join("") : ""}
-    ${add.length ? `<div class="sg-title">동선에 거의 그대로 들어가는 보류 장소</div>` + add.map((x) => row(x, `DAY ${x.day + 1} 동선에 넣어도 이동 <b>+${x.extra}분</b>`, "pick", "갈 곳으로")).join("") : ""}`;
+    ${remove.length ? `<div class="sg-title">빼면 이동이 줄어드는 곳</div>` + remove.map((x) => row(x, `DAY ${num(x.day) + 1}에서 빼면 이동 <b>−${num(x.save)}분</b>`, "hold", "보류로")).join("") : ""}
+    ${add.length ? `<div class="sg-title">동선에 거의 그대로 들어가는 보류 장소</div>` + add.map((x) => row(x, `DAY ${num(x.day) + 1} 동선에 넣어도 이동 <b>+${num(x.extra)}분</b>`, "pick", "갈 곳으로")).join("") : ""}`;
 }
 
 $("#suggestions").addEventListener("click", (e) => {
@@ -270,8 +281,9 @@ $("#suggestions").addEventListener("click", (e) => {
   const pick = b.dataset.sg === "pick";
   const sg = (trip().schedule.suggest?.[pick ? "add" : "remove"] || []).find((x) => x.id === p.id);
   store.updatePlace(p.id, { selected: pick });
-  const { trip: input, wishes } = applyRequests(trip(), trip().meta.requests);
-  const next = sg && applySuggestion(input, trip().schedule, { type: pick ? "add" : "remove", id: p.id, day: sg.day }, { wishes, prefs: trip().meta.prefs || {} });
+  const { input, opts } = planInput();
+  const next = sg && applySuggestion(input, trip().schedule, { type: pick ? "add" : "remove", id: p.id, day: sg.day }, opts);
+  if (next) next.inputsKey = inputsKey(trip());
   if (!next) return runGenerate(); // 그대로 적용할 수 없으면 다시 짠다
   store.update((t) => (t.schedule = { ...next, by: store.user }));
   ui.day = sg.day;
@@ -298,11 +310,11 @@ function drawPlanMap() {
     return;
   }
   const pts = [hotel];
-  let num = 0;
+  let order = 0;
   day.items.forEach((it) => {
-    const p = placeById(it.id);
+    const p = livePlaceById(it.id);
     if (!p) return;
-    const i = num++;
+    const i = order++;
     const loc = locOf(p, it);
     pts.push([loc.lat, loc.lon]);
     L.marker([loc.lat, loc.lon], { icon: numIcon(i + 1) })
@@ -322,8 +334,16 @@ $("#dayTabs").addEventListener("click", (e) => {
   drawPlanMap();
 });
 
+// 문장 요청을 반영한 일정 입력과 옵션 (일정 생성·추천 적용에서 같이 씀)
+function planInput() {
+  const { trip: input, wishes } = applyRequests(trip(), activeRequests(trip()));
+  const excludedIds = new Set(input.places.filter((p) => !p.deleted && !p.selected).map((p) => p.id).filter((id) => placeById(id)?.selected));
+  return { input, opts: { wishes, prefs: trip().meta.prefs || {}, inputsKey: inputsKey(trip()), excludedIds } };
+}
+
 function renderRequests() {
-  const reqs = trip().meta.requests || [];
+  const reqs = activeRequests(trip());
+  const unmet = reqs.length ? trip().schedule?.unmet || [] : [];
   $("#requestList").innerHTML = reqs
     .map((r) => {
       const rules = parseRequest(r.text, trip());
@@ -332,7 +352,8 @@ function renderRequests() {
         : `<small class="bad">이해하지 못했어요. 날짜·동네·종류·장소 이름을 넣어 다시 적어주세요.</small>`;
       return `<div class="req"><div class="body">“${esc(r.text)}”${how}</div><button data-delreq="${esc(r.id)}" aria-label="요청 삭제">✕</button></div>`;
     })
-    .join("");
+    .join("") +
+    (unmet.length ? `<div class="req warn"><div class="body">⚠️ 이번 일정에서 못 지킨 요청<small>${unmet.map(esc).join("<br>")}</small></div></div>` : "");
 }
 
 $("#requestForm").addEventListener("submit", (e) => {
@@ -340,18 +361,14 @@ $("#requestForm").addEventListener("submit", (e) => {
   const text = $("#requestInput").value.trim();
   if (!text) return;
   if (!parseRequest(text, trip()).length) return toast("이해하지 못했어요 · 예: ‘둘째날 오후는 첼시에서 빈티지 쇼핑’", 3500);
-  store.update((t) => {
-    t.meta = { ...t.meta, requests: [...(t.meta.requests || []), { id: newId(), text, by: store.user }], updatedAt: Date.now() };
-  });
+  store.addRequest(text, { by: store.user });
   $("#requestInput").value = "";
   runGenerate();
 });
 $("#requestList").addEventListener("click", (e) => {
   const b = e.target.closest("[data-delreq]");
   if (!b) return;
-  store.update((t) => {
-    t.meta = { ...t.meta, requests: (t.meta.requests || []).filter((r) => r.id !== b.dataset.delreq), updatedAt: Date.now() };
-  });
+  store.removeRequest(b.dataset.delreq);
   runGenerate();
 });
 
@@ -363,17 +380,14 @@ $("#prefChips").addEventListener("click", (e) => {
   if (!b) return;
   const key = b.dataset.pref;
   const on = b.dataset.value ? +b.dataset.value : true;
-  store.update((t) => {
-    const prefs = { ...(t.meta.prefs || {}), [key]: t.meta.prefs?.[key] ? false : on };
-    t.meta = { ...t.meta, prefs, updatedAt: Date.now() };
-  });
+  store.setPref(key, trip().meta.prefs?.[key] ? false : on);
   toast(trip().meta.prefs[key] ? `${b.textContent.trim()} 켬 · 다시 짜는 중…` : `${b.textContent.trim()} 끔 · 다시 짜는 중…`);
   runGenerate();
 });
 
 function runGenerate() {
   const selected = livePlaces().filter((p) => p.selected);
-  if (!selected.length && !(trip().meta.requests || []).length) {
+  if (!selected.length && !activeRequests(trip()).length) {
     toast("‘장소’ 탭에서 갈 곳을 먼저 골라주세요");
     return;
   }
@@ -381,8 +395,8 @@ function runGenerate() {
   btn.disabled = true;
   btn.textContent = "⏳ 계산 중…";
   setTimeout(() => {
-    const { trip: input, wishes } = applyRequests(trip(), trip().meta.requests);
-    const sch = generateSchedule(input, { timeBudgetMs: 2000, wishes, prefs: trip().meta.prefs || {} });
+    const { input, opts } = planInput();
+    const sch = generateSchedule(input, { timeBudgetMs: 2000, ...opts });
     sch.inputsKey = inputsKey(trip());
     store.update((t) => (t.schedule = { ...sch, by: store.user }));
     btn.disabled = false;
@@ -406,10 +420,15 @@ document.addEventListener("click", (e) => {
 
 // ---------------- 장소 ----------------
 function renderPlaces() {
-  const list = livePlaces().filter((p) => (ui.filter === "selected" ? p.selected : ui.filter === "unselected" ? !p.selected : true));
+  const list = livePlaces().filter((p) =>
+    ui.filter === "selected" ? p.selected : ui.filter === "unselected" ? !p.selected : ui.filter === "must" ? p.priority === "must" : true,
+  );
   document.querySelectorAll("#placeFilter .chip").forEach((c) => c.classList.toggle("active", c.dataset.filter === ui.filter));
   if (!list.length) {
-    $("#placeList").innerHTML = `<div class="empty">장소가 없어요. 위에서 검색해 추가해보세요.</div>`;
+    $("#placeList").innerHTML =
+      ui.filter === "must"
+        ? `<div class="empty">꼭 갈 곳이 없어요. 장소를 눌러 ‘꼭 가기’를 체크하세요.</div>`
+        : `<div class="empty">장소가 없어요. 위에서 검색해 추가해보세요.</div>`;
     return;
   }
   const groupKey = (p) => (p.category === "restaurant" ? `food:${CUISINES[p.cuisine] ? p.cuisine : "other"}` : p.category);
@@ -429,7 +448,7 @@ function renderPlaces() {
             const extra = [p.priority === "must" ? "꼭 가기" : "", p.category === "restaurant" && MEAL_PREF[p.mealPref] ? MEAL_PREF[p.mealPref] : "", pinned ? "📌 고정" : "", (p.slots || []).length ? `🎫 ${p.slots.length}개 시각` : "", p.branches?.length ? `지점 ${p.branches.length + 1}곳` : ""].filter(Boolean).join(" · ");
             return `<div class="place ${p.selected ? "" : "off"}">
               <button class="check ${p.selected ? "on" : ""}" data-toggle="${esc(p.id)}" aria-label="갈 곳으로 선택">${p.selected ? "✓" : ""}</button>
-              <div class="info" data-open="${esc(p.id)}"><b>${esc(p.name)}</b><span>${p.duration}분 · ${esc(hi.label)}${extra ? ` · ${esc(extra)}` : ""}</span></div>
+              <div class="info" data-open="${esc(p.id)}"><b>${esc(p.name)}</b><span>${num(p.duration)}분 · ${esc(hi.label)}${extra ? ` · ${esc(extra)}` : ""}</span></div>
             </div>`;
           })
           .join(""),
@@ -539,14 +558,16 @@ $("#searchResults").addEventListener("click", async (e) => {
   renderResults();
   toast(`‘${r.name}’ 추가 · 영업시간 찾는 중…`);
   const found = await lookupHours(placeById(id)).catch(() => null);
-  if (found?.cuisine && r.category === "restaurant") store.updatePlace(id, { cuisine: found.cuisine });
-  if (found?.hours) {
-    store.updatePlace(id, { hours: found.hours, hoursSource: "osm", osm: found.osm, website: found.website || null });
+  const now = livePlaceById(id); // 조회하는 사이 삭제·수정됐을 수 있다
+  if (!now) return;
+  if (found?.cuisine && now.category === "restaurant" && (!now.cuisine || now.cuisine === "other")) store.updatePlace(id, { cuisine: found.cuisine });
+  if (found?.hours && !now.hours) {
+    store.updatePlace(id, { hours: found.hours, hoursSource: "osm", osm: found.osm, ...(now.website ? {} : { website: found.website || null }) });
     toast(`‘${r.name}’ 영업시간을 OSM에서 가져왔어요`);
-  } else {
+  } else if (!now.hours) {
     toast(`‘${r.name}’ 영업시간 정보가 없어 기본값을 써요 (편집에서 입력 가능)`, 3200);
   }
-  if (BRANCHY.has(r.category)) {
+  if (BRANCHY.has(now.category) && !now.branches?.length) {
     const n = await attachBranches(id);
     if (n) toast(`‘${r.name}’ 분점 ${n}곳도 찾았어요 · 일정 만들 때 동선에 맞는 곳으로 골라요`, 3500);
   }
@@ -585,12 +606,14 @@ $("#lookupAllBtn").addEventListener("click", async (e) => {
   for (const [i, p] of targets.entries()) {
     e.target.textContent = `🕐 찾는 중… ${i + 1}/${targets.length}`;
     const r = await lookupHours(p).catch(() => null);
-    if (r?.cuisine && p.category === "restaurant" && !p.cuisine) store.updatePlace(p.id, { cuisine: r.cuisine });
-    if (r?.hours && !p.hours) {
+    const cur = livePlaceById(p.id); // 조회하는 사이 바뀐 값을 기준으로
+    if (!cur) continue;
+    if (r?.cuisine && cur.category === "restaurant" && !cur.cuisine) store.updatePlace(cur.id, { cuisine: r.cuisine });
+    if (r?.hours && !cur.hours) {
       found++;
-      store.updatePlace(p.id, { hours: r.hours, hoursSource: "osm", osm: r.osm });
-    } else if (r?.osm && !p.osm) store.updatePlace(p.id, { osm: r.osm });
-    if (BRANCHY.has(p.category) && !p.branchesCheckedAt) branches += (await attachBranches(p.id)) || 0;
+      store.updatePlace(cur.id, { hours: r.hours, hoursSource: "osm", osm: r.osm });
+    } else if (r?.osm && !cur.osm) store.updatePlace(cur.id, { osm: r.osm });
+    if (BRANCHY.has(cur.category) && !cur.branchesCheckedAt) branches += (await attachBranches(cur.id)) || 0;
     await new Promise((res) => setTimeout(res, 400)); // 무료 API 예의상 천천히
   }
   e.target.disabled = false;
@@ -625,8 +648,16 @@ placesMap.on("click", async (e) => {
 });
 
 // ---------------- 편집 시트 ----------------
+function parkToast() {
+  const el = $("#toast");
+  if (el && el.parentElement !== document.body) document.body.appendChild(el);
+}
+$("#sheet").addEventListener("close", parkToast);
+
 function openSheet(place, isNew = false, keepDraft = false) {
-  if (!keepDraft) ui.draft = { place: structuredClone(place), isNew };
+  parkToast(); // 시트 innerHTML을 바꾸면 그 안에 있던 토스트가 같이 지워지므로
+  if (ui.picking && !keepDraft) stopPicking(false);
+  if (!keepDraft) ui.draft = { place: structuredClone(place), orig: structuredClone(place), isNew };
   const p = ui.draft.place;
   const t = trip();
   const dayOpts = (sel, none) =>
@@ -641,7 +672,7 @@ function openSheet(place, isNew = false, keepDraft = false) {
       <div><label class="label" for="f-cat">종류</label><select id="f-cat">${Object.entries(CATEGORIES)
         .map(([k, c]) => `<option value="${k}" ${p.category === k ? "selected" : ""}>${c.icon} ${esc(c.label)}</option>`)
         .join("")}</select></div>
-      <div><label class="label" for="f-dur">머무는 시간(분)</label><input type="number" id="f-dur" min="10" max="600" step="5" value="${p.duration}"></div>
+      <div><label class="label" for="f-dur">머무는 시간(분)</label><input type="number" id="f-dur" min="10" max="600" step="5" value="${num(p.duration)}"></div>
     </div>
     <div class="field inline" id="f-meal-wrap" ${p.category === "restaurant" ? "" : "hidden"}>
       <div><label class="label" for="f-cuisine">메뉴</label><select id="f-cuisine">${Object.entries(CUISINES)
@@ -684,7 +715,7 @@ function openSheet(place, isNew = false, keepDraft = false) {
           .join("")}</select>
         <div class="hint">예: 러시 티켓 줄서기 → 같은 날 공연보다 먼저</div></div>
     </details>
-    <div class="card-actions"><a href="${esc(gmapsUrl(p))}" target="_blank" rel="noopener">구글 지도에서 보기</a>${p.website ? `<a href="${esc(p.website)}" target="_blank" rel="noopener">웹사이트</a>` : ""}</div>
+    <div class="card-actions"><a href="${esc(gmapsUrl(p))}" target="_blank" rel="noopener">구글 지도에서 보기</a>${/^https?:\/\//i.test(p.website || "") ? `<a href="${esc(p.website)}" target="_blank" rel="noopener">웹사이트</a>` : ""}</div>
     <div class="sheet-actions">
       ${isNew ? "" : '<button type="button" class="danger" id="f-del">삭제</button>'}
       <button type="button" id="f-cancel">취소</button>
@@ -711,12 +742,15 @@ function openSheet(place, isNew = false, keepDraft = false) {
     ui.draft.place.branches = ui.draft.place.branches.filter((_, i) => i !== +b.dataset.delbranch);
     renderBranches();
   });
+  const draft = ui.draft;
+  const stillOpen = () => ui.draft === draft && $("#sheet").open; // 결과가 늦게 와도 다른 장소 시트에 쓰지 않게
   $("#f-findbranch").addEventListener("click", async (e) => {
     readForm();
     e.target.disabled = true;
     e.target.textContent = "찾는 중…";
-    const found = await findBranches(ui.draft.place, trip().meta.hotel).catch(() => null);
+    const found = await findBranches(draft.place, trip().meta.hotel).catch(() => null);
     const branches = found ? await fillBranchHours(found) : null;
+    if (!stillOpen()) return;
     e.target.disabled = false;
     e.target.textContent = "🔎 같은 이름 분점 찾기";
     if (!branches) return toast("분점 검색에 실패했어요");
@@ -763,7 +797,8 @@ function openSheet(place, isNew = false, keepDraft = false) {
     readForm();
     e.target.disabled = true;
     e.target.textContent = "찾는 중…";
-    const r = await lookupHours(ui.draft.place).catch(() => null);
+    const r = await lookupHours(draft.place).catch(() => null);
+    if (!stillOpen()) return;
     e.target.disabled = false;
     e.target.textContent = "OSM 찾기";
     if (r?.osm) ui.draft.place.osm = r.osm;
@@ -795,8 +830,10 @@ function openSheet(place, isNew = false, keepDraft = false) {
     if (!d.name.trim()) return toast("이름을 입력해주세요");
     if (ui.draft.isNew) store.addPlace(d);
     else {
-      const { id, ...patch } = d;
-      store.updatePlace(id, patch);
+      const orig = ui.draft.orig || {};
+      const patch = {};
+      for (const k of Object.keys(d)) if (k !== "id" && JSON.stringify(d[k]) !== JSON.stringify(orig[k])) patch[k] = d[k];
+      if (Object.keys(patch).length) store.updatePlace(d.id, patch);
     }
     $("#sheet").close();
     toast(ui.draft.isNew ? "추가했어요" : "저장했어요");
@@ -832,7 +869,10 @@ function readForm() {
 }
 
 // ---------------- 설정 ----------------
-function renderSettings() {
+// 설정 칸에 입력 중인 값이 있으면(토큰 복사하러 다른 앱에 다녀오는 동안 등) 자동 갱신으로 지우지 않는다
+function renderSettings(force = false) {
+  if (!force && ui.settingsDirty) return;
+  ui.settingsDirty = false;
   const connected = !!store.token;
   $("#syncSection").innerHTML = `<div class="card">
     <h3>🔄 두 사람 공유 (GitHub)</h3>
@@ -845,10 +885,9 @@ function renderSettings() {
            <div class="field" style="margin-top:10px"><input type="text" id="tokenInput" placeholder="ghp_… 또는 github_pat_…" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
            <div class="row-actions"><button id="saveToken" class="primary">연결</button></div>
            <ol>
-             <li>GitHub → Settings → Developer settings → Personal access tokens</li>
-             <li><b>저장소 주인(${esc(REPO.owner)})</b>: Fine-grained token → Repository access는 <code>${esc(REPO.repo)}</code>만 → Permissions의 <b>Contents</b>를 <b>Read and write</b></li>
-             <li><b>collaborator</b>: 남의 개인 저장소에는 fine-grained 토큰을 쓸 수 없어서 Tokens (classic) → <code>public_repo</code> 권한만 체크</li>
-             <li>만든 토큰을 위에 붙여넣기. 토큰은 이 폰에만 저장돼요.</li>
+             <li><b>collaborator</b>: <a href="https://github.com/settings/tokens/new?scopes=public_repo&description=nyc-trip" target="_blank" rel="noopener">이 링크</a>로 classic 토큰 만들기 (<code>public_repo</code>가 체크된 채로 열려요) → 맨 아래 <b>Generate token</b></li>
+             <li><b>저장소 주인(${esc(REPO.owner)})</b>: <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">이 링크</a>로 fine-grained 토큰 → Repository access는 <code>${esc(REPO.repo)}</code>만 → Permissions의 <b>Contents</b>를 <b>Read and write</b></li>
+             <li>나온 토큰을 위에 붙여넣고 연결. 토큰은 이 폰에만 저장돼요. (GitHub 앱에는 이 메뉴가 없어서 브라우저로 열어야 해요)</li>
            </ol>`
     }
   </div>`;
@@ -863,11 +902,12 @@ function renderSettings() {
       )
       .join("")}</div>
     <div class="field"><label for="hotelName">호텔</label><input type="text" id="hotelName" value="${esc(m.hotel.name)}"></div>
-    <div class="field inline"><input type="number" step="0.00001" id="hotelLat" value="${m.hotel.lat}"><input type="number" step="0.00001" id="hotelLon" value="${m.hotel.lon}"></div>
+    <div class="field inline"><input type="number" step="0.00001" id="hotelLat" value="${num(m.hotel.lat)}"><input type="number" step="0.00001" id="hotelLon" value="${num(m.hotel.lon)}"></div>
     <div class="row-actions"><button id="saveTrip" class="primary">저장</button></div>
   </div>`;
 }
 
+$("#view-settings").addEventListener("input", () => (ui.settingsDirty = true));
 $("#view-settings").addEventListener("click", async (e) => {
   const id = e.target.id;
   if (id === "saveToken") {
@@ -878,14 +918,17 @@ $("#view-settings").addEventListener("click", async (e) => {
     if (r.ok) {
       toast(`${store.user} 계정으로 연결됐어요`);
       await store.sync();
-    } else toast(r.error || "연결 실패", 3500);
-    renderSettings();
+      renderSettings(true);
+    } else {
+      toast(r.error || "연결 실패", 3500);
+      e.target.disabled = false; // 입력한 토큰은 그대로 두고 다시 시도할 수 있게
+    }
   }
   if (id === "logout" && confirm("이 폰에서 GitHub 연결을 해제할까요?")) {
     await store.setToken(null);
-    renderSettings();
+    renderSettings(true);
   }
-  if (id === "syncNow") store.sync();
+  if (id === "syncNow") store.sync({ force: true });
   if (id === "saveTrip") {
     const days = trip().meta.days.map((d, i) => ({
       start: document.querySelector(`[data-daystart="${i}"]`).value || d.start,
@@ -894,10 +937,10 @@ $("#view-settings").addEventListener("click", async (e) => {
     if (days.some((d) => toMin(d.end) <= toMin(d.start))) return toast("끝 시각이 시작보다 늦어야 해요");
     const lat = +$("#hotelLat").value;
     const lon = +$("#hotelLon").value;
-    store.update((t) => {
-      t.meta = { ...t.meta, days, hotel: { name: $("#hotelName").value.trim() || t.meta.hotel.name, lat: lat || t.meta.hotel.lat, lon: lon || t.meta.hotel.lon }, updatedAt: Date.now() };
-    });
+    const h = trip().meta.hotel;
+    store.updateMeta({ days, hotel: { name: $("#hotelName").value.trim() || h.name, lat: lat || h.lat, lon: lon || h.lon } });
     toast("저장했어요");
+    renderSettings(true);
   }
   if (id === "snapshotBtn") {
     const url = await store.snapshotLink();
@@ -949,6 +992,7 @@ store.addEventListener("status", () => {
 });
 
 async function init() {
+  $("#requestHint").textContent = REQUEST_HINT;
   render();
   drawPlanMap();
   // 링크로 받은 데이터 합치기

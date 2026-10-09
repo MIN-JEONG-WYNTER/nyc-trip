@@ -22,6 +22,20 @@ export const AREAS = {
   brooklyn: { label: "브루클린", words: ["브루클린", "brooklyn"], c: [40.69, -73.97], r: 4.5 },
 };
 
+// 문장에 동네 이름이 있는지 — 영문 단어는 단어 경계가 있어야 인정 ("les"가 "lesson"에 걸리지 않게)
+const LATIN = /^[a-z0-9 .'-]+$/i;
+const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const WORD_RE = {};
+export function hasAreaWord(text, key) {
+  const lower = text.toLowerCase();
+  return AREAS[key].words.some((w) => {
+    if (!LATIN.test(w)) return lower.includes(w);
+    WORD_RE[w] ||= new RegExp(`(?<![a-z0-9])${esc(w).replace(/ /g, "\\s*")}(?![a-z0-9])`, "i");
+    return WORD_RE[w].test(lower);
+  });
+}
+export const findArea = (text) => Object.keys(AREAS).find((k) => hasAreaWord(text, k)) || null;
+
 // 장소가 속한 동네: 반경 대비 가장 가까운 동네 (브루클린 전체처럼 넓은 구역은 제외)
 const FINE = Object.keys(AREAS).filter((k) => k !== "brooklyn");
 export function areaOf(loc) {

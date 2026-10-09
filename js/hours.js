@@ -39,19 +39,27 @@ function parseDays(sel) {
   return days.size ? [...days] : null;
 }
 
+// 시각 검사: 분은 59까지, 시는 23까지(끝 시각만 24:00 허용). 범위를 벗어나면 null
+function clock(hhmm, isEnd) {
+  const t = toMin(hhmm);
+  if (t == null || +hhmm.split(":")[1] > 59 || t > (isEnd ? 1440 : 1439)) return null;
+  return t;
+}
+
 function parseTimes(str) {
   const out = [];
   for (const part of str.split(",")) {
     const open = /^(\d{1,2}:\d{2})\+$/.exec(part.trim());
     if (open) {
-      const o = toMin(open[1]);
+      const o = clock(open[1], false);
+      if (o == null) return null;
       out.push([o, o + 180]); // "18:00+" (끝 시간 미정) → 넉넉히 3시간으로 본다
       continue;
     }
     const m = /^(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})$/.exec(part.trim());
     if (!m) return null;
-    const o = toMin(m[1]);
-    let c = toMin(m[2]);
+    const o = clock(m[1], false);
+    let c = clock(m[2], true);
     if (o == null || c == null) return null;
     if (c <= o) c += 1440; // 자정을 넘기는 영업
     out.push([o, c]);
@@ -65,18 +73,19 @@ export function parseHours(raw) {
   const text = raw
     .replace(/"[^"]*"/g, "")
     .replace(/\|\|/g, ";")
-    .replace(/(\d)\s*,\s*(?=(?:Mo|Tu|We|Th|Fr|Sa|Su)\b)/g, "$1;") // "Mo-Sa 09:00-18:00, Su 12:00-19:00"
+    // "Mo-Sa 09:00-18:00, Su 12:00-19:00", "Mo 18:00+, Tu …", "Su 11:00-18:00, PH off" → 규칙 구분자로
+    .replace(/(\d|\+|\b[Oo]ff|\b[Cc]losed)\s*,\s*(?=(?:Mo|Tu|We|Th|Fr|Sa|Su|PH|SH)\b)/g, "$1;")
     .trim();
   if (!text) return null;
   const week = Array.from({ length: 7 }, () => null);
-  let applied = false;
+  let opened = false; // 영업 구간이 하나라도 있었는지 ("PH off"만 있는 문자열은 해석 불가로 본다)
 
   for (let rule of text.split(";")) {
     rule = rule.replace(/,\s*PH\b|\bPH\s*,/g, "").trim();
     if (!rule) continue;
     if (rule === "24/7") {
       for (let d = 0; d < 7; d++) week[d] = [[0, 1440]];
-      applied = true;
+      opened = true;
       continue;
     }
     // 공휴일·특정 월·주차 규칙은 여행 기간 판단에 필요 없으므로 건너뛴다
@@ -90,15 +99,14 @@ export function parseHours(raw) {
 
     if (/^(off|closed)$/i.test(rest)) {
       days.forEach((d) => (week[d] = []));
-      applied = true;
       continue;
     }
     const times = rest === "" ? null : parseTimes(rest);
     if (!times) return null;
     days.forEach((d) => (week[d] = times));
-    applied = true;
+    opened = true;
   }
-  if (!applied) return null;
+  if (!opened) return null;
   return week.map((w) => w || []);
 }
 

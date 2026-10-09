@@ -44,7 +44,7 @@
             <button type="submit" class="primary">반영</button>
           </form>
           <div id="requestList"></div>
-          <div class="hint">날짜(첫째날·10/10·토요일), 시간대(오전·점심·오후·저녁), 동네(소호·첼시·덤보·윌리엄스버그…), 종류(쇼핑·빈티지·편집샵·맛집·카페·루프탑·박물관), 메뉴(스테이크·피자·한식…), 장소 이름(모마·피터루거…)과 ‘꼭’, ‘빼줘’를 알아들어요.</div>
+          <div class="hint" id="requestHint"></div>
         </div>
       </section>
       <div class="chips pref-chips" id="prefChips">
@@ -77,6 +77,7 @@
         <div class="chips" id="placeFilter">
           <button class="chip active" data-filter="all">전체</button>
           <button class="chip" data-filter="selected">갈 곳</button>
+          <button class="chip" data-filter="must">꼭 갈 곳</button>
           <button class="chip" data-filter="unselected">보류</button>
         </div>
       </div>

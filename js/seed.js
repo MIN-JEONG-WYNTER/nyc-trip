@@ -147,6 +147,19 @@ const ADDED_SEED_PLACES = [
     ...osmHours("Mo-Th 11:45-21:45; Fr-Sa 11:45-22:45; Su 12:45-21:45", node(2483716076)),
     addr: "178 Broadway, Williamsburg",
   }),
+  // 말로 요청한 곳 — 체인이라 지점마다 구글 영업시간 (Midtown East 지점은 폐업)
+  place("n-lukes", "Luke's Lobster", 40.70452, -74.01092, "restaurant", 45, {
+    cuisine: "seafood",
+    hours: "Mo 11:00-19:00; Tu 11:00-19:00; We 11:00-19:00; Th 11:00-19:00; Fr 11:00-19:00; Sa 11:00-19:00; Su 11:00-19:00",
+    hoursSource: "google",
+    googleHours: 1,
+    osm: { type: "node", id: 3239326415 },
+    addr: "26 S William St, FiDi",
+    branches: [{"label": "Garment District · 1407 Broadway", "lat": 40.75348, "lon": -73.98761, "osm": null, "hours": "Mo 11:00-20:00; Tu 11:00-20:00; We 11:00-20:00; Th 11:00-20:00; Fr 11:00-20:00; Sa 11:00-20:00; Su 11:00-20:00", "googleHours": 1}, {"label": "Upper East Side · 242 E 81st St", "lat": 40.77473, "lon": -73.95456, "osm": null, "hours": "Mo 11:00-20:00; Tu 11:00-20:00; We 11:00-20:00; Th 11:00-20:00; Fr 11:00-20:00; Sa 11:00-20:00; Su 11:00-20:00", "googleHours": 1}, {"label": "Brooklyn Bridge Park · 11 Water St, DUMBO", "lat": 40.70348, "lon": -73.99414, "osm": null, "hours": "Mo 11:00-20:00; Tu 11:00-20:00; We 11:00-20:00; Th 11:00-20:00; Fr 11:00-21:00; Sa 11:00-21:00; Su 11:00-20:00", "googleHours": 1}, {"label": "Upper West Side · 426 Amsterdam Ave", "lat": 40.78421, "lon": -73.97783, "osm": null, "hours": "Mo 11:00-20:00; Tu 11:00-20:00; We 11:00-20:00; Th 11:00-20:00; Fr 11:00-20:00; Sa 11:00-20:00; Su 11:00-20:00", "googleHours": 1}, {"label": "Union Square · 124 University Pl", "lat": 40.73481, "lon": -73.99225, "osm": null, "hours": "Mo 11:00-20:00; Tu 11:00-20:00; We 11:00-20:00; Th 11:00-20:00; Fr 11:00-20:00; Sa 11:00-20:00; Su 11:00-19:00", "googleHours": 1}],
+    branchesCheckedAt: T1,
+    source: "request",
+    updatedAt: T1 + 30,
+  }),
   ...REQUESTED_PLACES.map(({ id, name, lat, lon, category, duration, ...extra }) =>
     place(id, name, lat, lon, category, duration, { ...extra, branchesCheckedAt: T1, source: "request", updatedAt: T1 + 20 }),
   ),
@@ -195,9 +208,42 @@ const sameSpot = (a, b) =>
   (a.osm && b.osm && a.osm.type === b.osm.type && a.osm.id === b.osm.id) ||
   (brand(a.name) && brand(a.name) === brand(b.name) && Math.abs(a.lat - b.lat) < 0.002 && Math.abs(a.lon - b.lon) < 0.002);
 
+// 분점별 구글 영업시간(GOOGLE_HOURS["id#i"])이 가리키는 원래 분점 — 위치로 맞춰 본다 (분점을 다시 찾으면 순서가 바뀜)
+const ORIG_BRANCHES = Object.fromEntries(
+  [...ADDED_SEED_PLACES.map((p) => [p.id, p.branches]), ...Object.entries(SEED_FIXES).map(([id, f]) => [id, f.branches])].filter(([, b]) => b?.length),
+);
+const within150m = (a, b) => Math.abs(a.lat - b.lat) * 111000 < 150 && Math.abs(a.lon - b.lon) * 84000 < 150;
+const origBranchIndex = (id, b, i) => {
+  const orig = ORIG_BRANCHES[id] || [];
+  return orig[i] && within150m(orig[i], b) ? i : orig.findIndex((o) => within150m(o, b));
+};
+
+// 같은 곳을 직접 추가한 사본으로 합칠 때 넘겨줄, 사용자가 바꾸는 값들
+const USER_FIELDS = ["selected", "priority", "note", "pin", "slots", "before", "duration", "mealPref", "cuisine"];
+const isObj = (v) => v && typeof v === "object" && !Array.isArray(v);
+const validLoc = (h) => isObj(h) && Number.isFinite(h.lat) && Number.isFinite(h.lon);
+
+// 빠졌거나 깨진 필드를 기본값으로 채운다 (예전 데이터·링크·원격 데이터)
+function normalizeTrip(trip) {
+  if (!isObj(trip)) throw new Error("여행 데이터 형식이 올바르지 않아요");
+  trip.schema = 1;
+  trip.places = Array.isArray(trip.places) ? trip.places.filter((p) => isObj(p) && typeof p.id === "string") : [];
+  if (!isObj(trip.meta)) trip.meta = {};
+  const m = trip.meta;
+  for (const k of ["title", "startDate"]) if (typeof m[k] !== "string") m[k] = SEED_META[k];
+  if (!validLoc(m.hotel)) m.hotel = structuredClone(SEED_META.hotel);
+  if (!Array.isArray(m.days) || !m.days.length || !m.days.every((d) => isObj(d) && d.start && d.end)) m.days = structuredClone(SEED_META.days);
+  if (m.prefs != null && !isObj(m.prefs)) delete m.prefs;
+  if (m.requests != null && !Array.isArray(m.requests)) delete m.requests;
+  if (m.requests) m.requests = m.requests.filter((r) => isObj(r) && r.id != null);
+  if (trip.schedule === undefined || (trip.schedule !== null && !isObj(trip.schedule))) trip.schedule = null;
+  for (const p of trip.places) if (p.branches != null && !Array.isArray(p.branches)) delete p.branches;
+  return trip;
+}
+
 // 예전 형식의 데이터를 지금 형식으로 맞춘다 (모든 폰에서 같은 결과가 나오도록 결정적으로)
 export function migrateTrip(trip) {
-  if (!trip) return trip;
+  normalizeTrip(trip);
   for (const p of trip.places) {
     // 예전의 "아침/점심/저녁" 종류 → 식당 + 끼니 옵션
     if (["breakfast", "lunch", "dinner"].includes(p.category)) {
@@ -221,46 +267,87 @@ export function migrateTrip(trip) {
 
   for (const sp of ADDED_SEED_PLACES) {
     const mine = trip.places.find((p) => p.id === sp.id);
-    // 같은 곳을 이미 직접 추가했으면 그쪽을 살리고, 비어 있는 정보만 채운다
-    const dup = trip.places.find((p) => p.id !== sp.id && !p.id.startsWith("seed-") && !p.id.startsWith("g-") && sameSpot(p, sp));
+    // 같은 곳을 이미 직접 추가했으면 그쪽을 살리고, 비어 있는 정보만 채운다 (지운 사본은 제외)
+    const dup = trip.places.find((p) => p.id !== sp.id && !p.deleted && !p.id.startsWith("seed-") && !p.id.startsWith("g-") && sameSpot(p, sp));
     if (dup) {
       for (const k of ["cuisine", "addr", "branches", "branchesCheckedAt", "website"]) if (sp[k] != null && dup[k] == null) dup[k] = structuredClone(sp[k]);
       if (!dup.hours && sp.hours) Object.assign(dup, { hours: sp.hours, hoursSource: sp.hoursSource, osm: dup.osm || sp.osm });
       if (dup.category === "restaurant" && (dup.cuisine === "other" || !dup.cuisine) && sp.cuisine) dup.cuisine = sp.cuisine;
-      if (mine && !mine.deleted) Object.assign(mine, { deleted: true, selected: false, updatedAt: Math.max(mine.updatedAt || 0, dup.updatedAt || 0) + 1 });
+      if (mine && !mine.deleted) {
+        // 씨앗 장소를 사본보다 나중에 고쳤으면 고친 값을 사본으로 옮긴 뒤 지운다
+        if ((mine.updatedAt || 0) > (sp.updatedAt || 0) && (mine.updatedAt || 0) > (dup.updatedAt || 0)) {
+          for (const k of USER_FIELDS) if (mine[k] !== undefined && JSON.stringify(mine[k]) !== JSON.stringify(sp[k])) dup[k] = structuredClone(mine[k]);
+          if (mine.hoursSource === "manual") Object.assign(dup, { hours: mine.hours, hoursSource: "manual" });
+          dup.updatedAt = mine.updatedAt;
+        }
+        Object.assign(mine, { deleted: true, selected: false, updatedAt: Math.max(mine.updatedAt || 0, dup.updatedAt || 0) + 1 });
+      }
       continue;
     }
     if (!mine) trip.places.push(structuredClone(sp));
   }
   for (const p of trip.places) {
-    if (TAGS[p.id] && !p.tags) p.tags = TAGS[p.id];
+    if (TAGS[p.id] && !p.tags) p.tags = [...TAGS[p.id]];
     if (NAMED.includes(p.id) && !p.namedSelected) Object.assign(p, { selected: true, namedSelected: true });
     // 구글 영업시간: 직접 입력한 값은 그대로 두고 한 번만 넣는다
     if (GOOGLE_HOURS[p.id] && p.hoursSource !== "manual" && !p.googleHours) Object.assign(p, { hours: GOOGLE_HOURS[p.id], hoursSource: "google", googleHours: 1 });
+    // 분점은 위치가 원래 분점과 같을 때만 (순서로 맞추면 다시 찾은 다른 분점에 엉뚱한 시간이 들어간다)
     (p.branches || []).forEach((b, i) => {
-      if (GOOGLE_HOURS[`${p.id}#${i}`] && !b.googleHours) Object.assign(b, { hours: GOOGLE_HOURS[`${p.id}#${i}`], googleHours: 1 });
+      if (!isObj(b)) return;
+      const j = origBranchIndex(p.id, b, i);
+      if (b.googleHours) {
+        // 예전 규칙(순서)으로 잘못 넣은 시간은 되돌린다
+        if (j !== i && b.hours === GOOGLE_HOURS[`${p.id}#${i}`]) {
+          delete b.googleHours;
+          b.hours = null;
+        } else return;
+      }
+      if (j >= 0 && GOOGLE_HOURS[`${p.id}#${j}`]) Object.assign(b, { hours: GOOGLE_HOURS[`${p.id}#${j}`], googleHours: 1 });
     });
   }
   const seedCuisine = { "seed-keens": "steak", "seed-lindustrie": "pizza", "seed-bark": "barbecue" };
   for (const p of trip.places) if (seedCuisine[p.id] && !p.cuisine) p.cuisine = seedCuisine[p.id];
+  sanitizeSchedule(trip);
   return trip;
 }
+
+// 공유 링크·원격에서 온 일정의 숫자 칸이 숫자가 아니면 바로잡는다 (화면에 그대로 들어가지 않게)
+function sanitizeSchedule(trip) {
+  const sch = trip.schedule;
+  if (!sch) return;
+  if (!Array.isArray(sch.days)) {
+    trip.schedule = null;
+    return;
+  }
+  const n = (v) => (Number.isFinite(+v) ? +v : 0);
+  for (const d of sch.days) {
+    d.items = Array.isArray(d.items) ? d.items.filter((it) => it && typeof it.id === "string") : [];
+    for (const it of d.items) for (const k of ["start", "end", "travel", "wait"]) it[k] = n(it[k]);
+    for (const it of d.items) if (it.branch != null) it.branch = n(it.branch);
+    d.back = { travel: n(d.back?.travel), mode: typeof d.back?.mode === "string" ? d.back.mode : "none" };
+  }
+  if (!Array.isArray(sch.unscheduled)) sch.unscheduled = [];
+  if (sch.stats) for (const k of Object.keys(sch.stats)) sch.stats[k] = n(sch.stats[k]);
+}
+
+// 처음 데이터의 설정 — 예전·깨진 데이터에 빠진 값을 채울 때도 쓴다
+const SEED_META = {
+  title: "OUR NYC TRIP",
+  startDate: "2026-10-09",
+  hotel: { name: "Club Quarters World Trade Center", lat: 40.70805, lon: -74.01332 },
+  days: [
+    { start: "15:00", end: "23:00" }, // 체크인 15:00
+    { start: "08:00", end: "23:00" },
+    { start: "08:00", end: "23:00" },
+    { start: "07:30", end: "11:00" }, // 체크아웃 11:00
+  ],
+  updatedAt: T0,
+};
 
 export function seedTrip() {
   return migrateTrip({
     schema: 1,
-    meta: {
-      title: "OUR NYC TRIP",
-      startDate: "2026-10-09",
-      hotel: { name: "Club Quarters World Trade Center", lat: 40.70805, lon: -74.01332 },
-      days: [
-        { start: "15:00", end: "23:00" }, // 체크인 15:00
-        { start: "08:00", end: "23:00" },
-        { start: "08:00", end: "23:00" },
-        { start: "07:30", end: "11:00" }, // 체크아웃 11:00
-      ],
-      updatedAt: T0,
-    },
+    meta: structuredClone(SEED_META),
     places: [
       place("seed-kith", "Kith Manhattan", 40.72455, -73.9953, "shop", 45),
       place("seed-wgaca", "What Goes Around Comes Around", 40.72085, -74.00155, "shop", 40),
