@@ -215,6 +215,8 @@ export function migrateTrip(trip) {
     if (hours && !p.hours) Object.assign(p, { hours, hoursSource, osm });
     if (branches && !p.branches?.length) Object.assign(p, { branches: structuredClone(branches), branchesCheckedAt });
   }
+  // 하루 이동 1시간 이내를 기본으로 (한 번만 켜고, 이후엔 사용자가 끄고 켬)
+  if (!trip.meta.maxDailyInit) trip.meta = { ...trip.meta, prefs: { ...(trip.meta.prefs || {}), maxDaily: 60 }, maxDailyInit: true };
   if (near(trip.meta.hotel, { lat: 40.70805, lon: -74.01332 })) Object.assign(trip.meta.hotel, { lat: 40.70983, lon: -74.01402 });
 
   for (const sp of ADDED_SEED_PLACES) {

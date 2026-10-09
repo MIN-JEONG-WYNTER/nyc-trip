@@ -162,6 +162,7 @@ function renderPlan() {
   const missing = (day.missingMeals || []).map((m) => MEAL_SLOTS[m].label);
   $("#dayHead").innerHTML = `<h2>DAY ${d + 1} · ${esc(dayLabel(d))}</h2><p>${names.length ? esc(names.slice(0, 3).join(" → ")) + (names.length > 3 ? " …" : "") : "아직 배정된 곳이 없어요"}</p>
     ${day.items.length ? `<span class="pill">🧭 이날 이동 ${travelText(dayTravel(day))}</span>` : ""}
+    ${t.meta.prefs?.maxDaily && dayTravel(day).total > t.meta.prefs.maxDaily ? `<span class="pill warn">⏱ ${t.meta.prefs.maxDaily}분 초과 — 꼭 가기·시간 고정 일정 때문에 더 줄일 수 없어요</span>` : ""}
     ${missing.length ? `<span class="pill warn">⚠️ ${missing.join("·")} 먹을 시간이 없어요</span>` : ""}`;
 
   const rows = [];
@@ -359,8 +360,9 @@ $("#prefChips").addEventListener("click", (e) => {
   const b = e.target.closest("[data-pref]");
   if (!b) return;
   const key = b.dataset.pref;
+  const on = b.dataset.value ? +b.dataset.value : true;
   store.update((t) => {
-    const prefs = { ...(t.meta.prefs || {}), [key]: !t.meta.prefs?.[key] };
+    const prefs = { ...(t.meta.prefs || {}), [key]: t.meta.prefs?.[key] ? false : on };
     t.meta = { ...t.meta, prefs, updatedAt: Date.now() };
   });
   toast(trip().meta.prefs[key] ? `${b.textContent.trim()} 켬 · 다시 짜는 중…` : `${b.textContent.trim()} 끔 · 다시 짜는 중…`);

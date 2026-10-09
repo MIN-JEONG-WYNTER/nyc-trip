@@ -17,6 +17,8 @@ const WISH_MISS_MUST = 3000;
 const AVOID_COST = 400;
 // 옵션 — 이동 최소: 이동 1분을 더 무겁게 보고, 멀리 있는 "가고 싶음" 장소는 빠질 수 있게 한다
 const MIN_TRAVEL = { travelWeight: 4, wantPenalty: 250 };
+// 옵션 — 하루 이동 상한(분): 넘는 1분마다 이 비용. "가고 싶음" 장소 하나(1000)보다 크게 잡아, 3분만 넘어도 장소를 빼서 맞춘다
+const OVER_DAILY_COST = 400;
 // 옵션 — 하루 한 동네: 그날 동네가 하나 늘 때마다
 const EXTRA_AREA_COST = 150; // "그날은 쇼핑 빼줘" 같은 요청을 어긴 곳마다
 const WAIT_WEIGHT = 0.25;
@@ -266,7 +268,8 @@ export function createSolver(trip, wishes = [], prefs = {}) {
       for (const it of items) if (!it.freeMeal) areas.add(locs[it.id][it.branch || 0].area);
       areaCost = EXTRA_AREA_COST * Math.max(0, areas.size - 1);
     }
-    const cost = travelWeight * (travelSum + back.min) + areaCost + WAIT_WEIGHT * waitSum + balance + FREE_MEAL_COST * freeMeals + MISSING_MEAL_COST * missingMeals +
+    const overDaily = prefs.maxDaily ? Math.max(0, travelSum + back.min - prefs.maxDaily) : 0;
+    const cost = travelWeight * (travelSum + back.min) + OVER_DAILY_COST * overDaily + areaCost + WAIT_WEIGHT * waitSum + balance + FREE_MEAL_COST * freeMeals + MISSING_MEAL_COST * missingMeals +
       MEAL_OFF_WEIGHT * mealOff + LATE_START_WEIGHT * lateStart + wishCost;
     return { items, back, travelSum: travelSum + back.min, waitSum, cost, meals };
   }
@@ -324,7 +327,8 @@ export function createSolver(trip, wishes = [], prefs = {}) {
   function insertAll(sol, ids) {
     for (const id of ids) {
       const ins = bestInsertion(sol, id);
-      if (ins) apply(sol, ins);
+      // 넣어서 늘어나는 비용이 안 넣을 때의 벌점보다 크면 넣지 않는다
+      if (ins && ins.delta < penalty(id)) apply(sol, ins);
     }
     // 식당으로 채우지 못한 끼니에 자유 식사 자리를 넣는다
     for (let d = 0; d < nDays; d++) {
@@ -455,6 +459,7 @@ export function createSolver(trip, wishes = [], prefs = {}) {
     if (meal && feasibleAlone.every((d) => sol.seqs[d].some((q) => !isFree(q) && cat(P[q].category).meal))) {
       return "같은 식사 시간대에 다른 식당이 이미 있어요";
     }
+    if (prefs.maxDaily) return `하루 이동 ${prefs.maxDaily}분 이내에 맞추느라 뺐어요 (꼭 가기로 바꾸면 넣어요)`;
     if (prefs.minTravel) return "이동 최소 모드라 동선에서 먼 곳은 뺐어요 (꼭 가기로 바꾸면 넣어요)";
     return "시간이 부족해요 — 다른 장소를 빼거나 하루 시간을 늘려보세요";
   }
