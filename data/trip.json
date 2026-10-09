@@ -2320,14 +2320,13 @@
    },
    "before": null,
    "priority": "want",
-   "selected": true,
+   "selected": false,
    "note": "",
    "osm": {
     "type": "node",
     "id": 3239326415
    },
    "addedBy": null,
-   "updatedAt": 1791500000030,
    "cuisine": "seafood",
    "googleHours": 1,
    "addr": "26 S William St, FiDi",
@@ -2374,7 +2373,34 @@
     }
    ],
    "branchesCheckedAt": 1791500000000,
-   "source": "request"
+   "source": "request",
+   "fu": {
+    "id": 1791500000030,
+    "name": 1791500000030,
+    "lat": 1791500000030,
+    "lon": 1791500000030,
+    "category": 1791500000030,
+    "duration": 1791500000030,
+    "hours": 1791500000030,
+    "hoursSource": 1791500000030,
+    "slots": 1791500000030,
+    "pin": 1791500000030,
+    "before": 1791500000030,
+    "priority": 1791500000030,
+    "selected": 1791571335872,
+    "note": 1791500000030,
+    "osm": 1791500000030,
+    "addedBy": 1791500000030,
+    "cuisine": 1791500000030,
+    "googleHours": 1791500000030,
+    "addr": 1791500000030,
+    "branches": 1791500000030,
+    "branchesCheckedAt": 1791500000030,
+    "source": 1791500000030
+   },
+   "baseAt": 1791500000030,
+   "updatedAt": 1791571335872,
+   "updatedBy": "dohyun1411"
   }
  ],
  "schedule": {
