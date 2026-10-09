@@ -3,7 +3,7 @@
 // - 공유: GitHub 저장소의 별도 브랜치(trip-data)에 data/trip.json으로 저장.
 //   사이트 코드(main)와 분리해 두어 저장할 때마다 GitHub Pages가 다시 빌드되지 않게 한다.
 // - 합치기: 장소는 id별로 updatedAt이 최신인 쪽, 설정·일정은 각각 최신인 쪽을 쓴다.
-import { seedTrip } from "./seed.js";
+import { seedTrip, migrateTrip } from "./seed.js";
 
 const LS_TRIP = "nyc-trip:trip";
 const LS_TOKEN = "nyc-trip:token";
@@ -81,7 +81,7 @@ export class Store extends EventTarget {
     try {
       saved = JSON.parse(lsGet(LS_TRIP));
     } catch {}
-    this.trip = saved?.schema === 1 ? saved : seedTrip();
+    this.trip = saved?.schema === 1 ? migrateTrip(saved) : seedTrip();
     this.token = lsGet(LS_TOKEN);
     this.user = null; // GitHub 로그인
     this.canWrite = false;
@@ -181,12 +181,12 @@ export class Store extends EventTarget {
       const raw = await fetch(`https://raw.githubusercontent.com/${REPO.owner}/${REPO.repo}/${DATA_BRANCH}/${DATA_PATH}?t=${Date.now()}`);
       if (raw.status === 404) return { trip: null, sha: null };
       if (!raw.ok) throw new Error(`불러오기 실패 (${raw.status})`);
-      return { trip: await raw.json(), sha: this.remoteSha };
+      return { trip: migrateTrip(await raw.json()), sha: this.remoteSha };
     }
     if (!res.ok) throw new Error(`불러오기 실패 (${res.status})`);
     this.etag = res.headers.get("ETag");
     const file = await res.json();
-    return { trip: JSON.parse(b64decode(file.content)), sha: file.sha };
+    return { trip: migrateTrip(JSON.parse(b64decode(file.content))), sha: file.sha };
   }
 
   async ensureBranch() {
@@ -296,8 +296,8 @@ export class Store extends EventTarget {
     const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
     if (kind === "z") {
       const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
-      return JSON.parse(await new Response(stream).text());
+      return migrateTrip(JSON.parse(await new Response(stream).text()));
     }
-    return JSON.parse(new TextDecoder().decode(bytes));
+    return migrateTrip(JSON.parse(new TextDecoder().decode(bytes)));
   }
 }

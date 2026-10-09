@@ -55,8 +55,9 @@ function startRanges(p, dayIdx, meta) {
   let ranges = open.map(([o, cl]) => [o, cl - dur]).filter(([a, b]) => a <= b);
 
   if (c.meal === "any") {
-    // mealPref: 점심만 / 저녁만 / 상관없음(null)
-    const meals = p.mealPref === "lunch" || p.mealPref === "dinner" ? [p.mealPref] : ["lunch", "dinner"];
+    // mealPref: 아침·점심·저녁 중 하나로만 / 상관없음(null = 점심 또는 저녁)
+    const meals = MEAL_WINDOWS[p.mealPref] ? [p.mealPref] : ["lunch", "dinner"];
+    if (!week && p.mealPref === "breakfast") ranges = [[7 * 60, 11 * 60 - dur]];
     ranges = meals.flatMap((m) => intersect(ranges, MEAL_WINDOWS[m]));
   } else if (c.meal) {
     ranges = intersect(ranges, MEAL_WINDOWS[c.meal]);
@@ -71,6 +72,7 @@ function mealOf(p, start) {
   const meal = cat(p.category).meal;
   if (!meal) return null;
   if (meal !== "any") return meal;
+  if (p.mealPref === "breakfast") return "breakfast";
   return start < MEAL_WINDOWS.dinner[0] ? "lunch" : "dinner";
 }
 

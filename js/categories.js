@@ -16,9 +16,6 @@ export const MEAL_SLOTS = {
 
 export const CATEGORIES = {
   restaurant: { label: "식당", icon: "🍴", dur: 75, meal: "any", hours: [h(11, 22.5)] },
-  breakfast: { label: "아침", icon: "🥯", dur: 45, meal: "breakfast", hours: [h(7, 11)] },
-  lunch: { label: "점심", icon: "🍜", dur: 60, meal: "lunch", hours: [h(11, 22.5)] },
-  dinner: { label: "저녁", icon: "🍽️", dur: 90, meal: "dinner", hours: [h(11, 22.5)] },
   cafe: { label: "카페·디저트", icon: "☕", dur: 40, hours: [h(7, 21)] },
   bar: { label: "바·루프탑", icon: "🍸", dur: 90, hours: [h(16, 26)], window: h(18, 24) },
   sight: { label: "관광·산책", icon: "🌉", dur: 60, hours: [h(0, 24)], window: h(7, 22) },
@@ -31,6 +28,44 @@ export const CATEGORIES = {
 };
 
 export const cat = (key) => CATEGORIES[key] || CATEGORIES.other;
+
+// 식당 메뉴 구분. osm: OSM cuisine 태그 값 중 이 메뉴로 볼 것들
+export const CUISINES = {
+  korean: { label: "한식", icon: "🍲", osm: ["korean"] },
+  pizza: { label: "피자", icon: "🍕", osm: ["pizza"] },
+  burger: { label: "햄버거", icon: "🍔", osm: ["burger", "hot_dog"] },
+  steak: { label: "스테이크", icon: "🥩", osm: ["steak_house", "steak"] },
+  barbecue: { label: "바비큐", icon: "🍖", osm: ["barbecue", "bbq"] },
+  chicken: { label: "치킨", icon: "🍗", osm: ["chicken", "fried_chicken", "wings"] },
+  japanese: { label: "일식·스시", icon: "🍣", osm: ["japanese", "sushi"] },
+  ramen: { label: "라멘·누들", icon: "🍜", osm: ["ramen", "noodle", "udon", "soba"] },
+  chinese: { label: "중식", icon: "🥟", osm: ["chinese", "dumpling", "dim_sum", "cantonese", "sichuan"] },
+  asian: { label: "아시안", icon: "🍛", osm: ["thai", "vietnamese", "indian", "asian", "malaysian", "filipino"] },
+  italian: { label: "이탈리안·파스타", icon: "🍝", osm: ["italian", "pasta"] },
+  mexican: { label: "멕시칸·타코", icon: "🌮", osm: ["mexican", "tacos", "tex-mex", "latin_american"] },
+  seafood: { label: "해산물", icon: "🦞", osm: ["seafood", "fish", "oyster", "lobster"] },
+  sandwich: { label: "샌드위치·델리", icon: "🥪", osm: ["sandwich", "deli", "bagel"] },
+  brunch: { label: "브런치", icon: "🍳", osm: ["breakfast", "brunch", "diner", "pancake"] },
+  mediterranean: { label: "지중해·중동", icon: "🥙", osm: ["mediterranean", "greek", "middle_eastern", "falafel", "lebanese", "turkish", "kebab"] },
+  american: { label: "아메리칸", icon: "🇺🇸", osm: ["american", "southern", "regional"] },
+  french: { label: "프렌치", icon: "🥖", osm: ["french"] },
+  other: { label: "기타 음식", icon: "🍴", osm: [] },
+};
+
+// OSM cuisine 태그("american;barbecue" 처럼 여러 개일 수 있음) → 메뉴 키. 구체적인 값을 우선한다.
+export function cuisineFromOsm(tag) {
+  if (!tag) return null;
+  const values = tag.toLowerCase().split(";").map((v) => v.trim());
+  const keys = Object.keys(CUISINES).filter((k) => k !== "american");
+  for (const v of values) for (const k of keys) if (CUISINES[k].osm.includes(v)) return k;
+  return values.some((v) => CUISINES.american.osm.includes(v)) ? "american" : "other";
+}
+
+// 화면 표시용 종류(식당이면 메뉴로)
+export function kindOf(p) {
+  if (p.category === "restaurant" && p.cuisine && CUISINES[p.cuisine]) return CUISINES[p.cuisine];
+  return cat(p.category);
+}
 
 // Photon(OSM) 검색 결과의 osm_key / osm_value → 카테고리
 export function categoryFromOsm(key, value) {

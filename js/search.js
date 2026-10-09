@@ -1,5 +1,5 @@
 // 장소 검색(Photon)과 영업시간 조회(OpenStreetMap API). 둘 다 키 없이 쓰는 무료 서비스.
-import { categoryFromOsm } from "./categories.js";
+import { categoryFromOsm, cuisineFromOsm } from "./categories.js";
 import { distanceKm } from "./geo.js";
 
 const PHOTON = "https://photon.komoot.io";
@@ -59,7 +59,12 @@ export async function findOsmMatch(place) {
 
 export async function lookupHours(place) {
   const osm = place.osm || (await findOsmMatch(place))?.osm;
-  if (!osm) return { osm: null, hours: null };
+  if (!osm) return { osm: null, hours: null, cuisine: null };
   const tags = await fetchOsmTags(osm);
-  return { osm, hours: tags?.opening_hours || null, website: tags?.website || tags?.["contact:website"] || null };
+  return {
+    osm,
+    hours: tags?.opening_hours || null,
+    cuisine: cuisineFromOsm(tags?.cuisine),
+    website: tags?.website || tags?.["contact:website"] || null,
+  };
 }

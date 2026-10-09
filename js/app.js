@@ -1,5 +1,5 @@
 import { Store, REPO, mergeTrips } from "./store.js";
-import { CATEGORIES, MEAL_SLOTS, cat } from "./categories.js";
+import { CATEGORIES, CUISINES, MEAL_SLOTS, cat, kindOf } from "./categories.js";
 import { parseHours, describeHours, fmtMin, toMin, weekdayOf } from "./hours.js";
 import { generateSchedule, inputsKey, tripDate } from "./optimizer.js";
 import { searchPlaces, reverseGeocode, lookupHours } from "./search.js";
@@ -8,7 +8,7 @@ const store = new Store();
 const $ = (sel) => document.querySelector(sel);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const WEEK_EN = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
-const MEAL_PREF = { lunch: "점심만", dinner: "저녁만" };
+const MEAL_PREF = { breakfast: "아침만", lunch: "점심만", dinner: "저녁만" };
 const MODE = { walk: "🚶 도보", subway: "🚇 지하철", none: "📍 바로 옆" };
 
 const ui = { view: "plan", day: null, filter: "all", draft: null, picking: false };
@@ -160,7 +160,7 @@ function renderPlan() {
     const p = placeById(it.id);
     if (!p) return;
     const i = num++;
-    const c = cat(p.category);
+    const c = kindOf(p);
     const pinned = p.pin && (p.pin.day != null || p.pin.time);
     const hi = hoursInfo(p);
     rows.push(`
@@ -202,7 +202,7 @@ function renderPlan() {
       un
         .map((u) => {
           const p = placeById(u.id);
-          return `<div class="card"><div class="type">${cat(p.category).icon} ${esc(cat(p.category).label)}</div><h3>${esc(p.name)}</h3><p>${esc(u.reason)}</p>
+          return `<div class="card"><div class="type">${kindOf(p).icon} ${esc(kindOf(p).label)}</div><h3>${esc(p.name)}</h3><p>${esc(u.reason)}</p>
             <div class="card-actions"><button data-act="edit" data-id="${esc(p.id)}">편집</button></div></div>`;
         })
         .join("")
@@ -289,13 +289,16 @@ function renderPlaces() {
     $("#placeList").innerHTML = `<div class="empty">장소가 없어요. 위에서 검색해 추가해보세요.</div>`;
     return;
   }
+  const groupKey = (p) => (p.category === "restaurant" ? `food:${CUISINES[p.cuisine] ? p.cuisine : "other"}` : p.category);
+  const groupInfo = (k) => (k.startsWith("food:") ? CUISINES[k.slice(5)] : CATEGORIES[k]);
   const groups = {};
-  for (const p of list) (groups[p.category] ||= []).push(p);
-  $("#placeList").innerHTML = Object.keys(CATEGORIES)
+  for (const p of list) (groups[groupKey(p)] ||= []).push(p);
+  const order = [...Object.keys(CUISINES).map((c) => `food:${c}`), ...Object.keys(CATEGORIES).filter((k) => k !== "restaurant")];
+  $("#placeList").innerHTML = order
     .filter((k) => groups[k])
     .map(
       (k) =>
-        `<div class="group-title">${CATEGORIES[k].icon} ${esc(CATEGORIES[k].label)}</div>` +
+        `<div class="group-title">${groupInfo(k).icon} ${esc(groupInfo(k).label)}</div>` +
         groups[k]
           .map((p) => {
             const hi = hoursInfo(p);
@@ -409,6 +412,7 @@ $("#searchResults").addEventListener("click", async (e) => {
   renderResults();
   toast(`‘${r.name}’ 추가 · 영업시간 찾는 중…`);
   const found = await lookupHours(placeById(id)).catch(() => null);
+  if (found?.cuisine && r.category === "restaurant") store.updatePlace(id, { cuisine: found.cuisine });
   if (found?.hours) {
     store.updatePlace(id, { hours: found.hours, hoursSource: "osm", osm: found.osm, website: found.website || null });
     toast(`‘${r.name}’ 영업시간을 OSM에서 가져왔어요`);
@@ -442,14 +446,15 @@ function blankPlace(fields) {
 $("#addManualBtn").addEventListener("click", () => openSheet(blankPlace({}), true));
 
 $("#lookupAllBtn").addEventListener("click", async (e) => {
-  const targets = livePlaces().filter((p) => !p.hours);
-  if (!targets.length) return toast("모든 장소에 영업시간이 있어요");
+  const targets = livePlaces().filter((p) => !p.hours || (p.category === "restaurant" && !p.cuisine));
+  if (!targets.length) return toast("모든 장소에 영업시간(식당은 메뉴까지)이 있어요");
   e.target.disabled = true;
   let found = 0;
   for (const [i, p] of targets.entries()) {
     e.target.textContent = `🕐 찾는 중… ${i + 1}/${targets.length}`;
     const r = await lookupHours(p).catch(() => null);
-    if (r?.hours) {
+    if (r?.cuisine && p.category === "restaurant" && !p.cuisine) store.updatePlace(p.id, { cuisine: r.cuisine });
+    if (r?.hours && !p.hours) {
       found++;
       store.updatePlace(p.id, { hours: r.hours, hoursSource: "osm", osm: r.osm });
     } else if (r?.osm && !p.osm) store.updatePlace(p.id, { osm: r.osm });
@@ -505,12 +510,17 @@ function openSheet(place, isNew = false, keepDraft = false) {
         .join("")}</select></div>
       <div><label class="label" for="f-dur">머무는 시간(분)</label><input type="number" id="f-dur" min="10" max="600" step="5" value="${p.duration}"></div>
     </div>
-    <div class="field" id="f-meal-wrap" ${p.category === "restaurant" ? "" : "hidden"}><label for="f-meal">끼니</label>
+    <div class="field inline" id="f-meal-wrap" ${p.category === "restaurant" ? "" : "hidden"}>
+      <div><label class="label" for="f-cuisine">메뉴</label><select id="f-cuisine">${Object.entries(CUISINES)
+        .map(([k, c]) => `<option value="${k}" ${(p.cuisine || "other") === k ? "selected" : ""}>${c.icon} ${esc(c.label)}</option>`)
+        .join("")}</select></div>
+      <div><label class="label" for="f-meal">끼니</label>
       <select id="f-meal">
         <option value="" ${!p.mealPref ? "selected" : ""}>점심·저녁 상관없음</option>
+        <option value="breakfast" ${p.mealPref === "breakfast" ? "selected" : ""}>아침으로만</option>
         <option value="lunch" ${p.mealPref === "lunch" ? "selected" : ""}>점심으로만</option>
         <option value="dinner" ${p.mealPref === "dinner" ? "selected" : ""}>저녁으로만</option>
-      </select></div>
+      </select></div></div>
     <div class="field inline">
       <label class="toggle"><input type="checkbox" id="f-sel" ${p.selected ? "checked" : ""}> 갈 곳</label>
       <label class="toggle"><input type="checkbox" id="f-must" ${p.priority === "must" ? "checked" : ""}> 꼭 가기</label>
@@ -585,6 +595,7 @@ function openSheet(place, isNew = false, keepDraft = false) {
     e.target.disabled = false;
     e.target.textContent = "OSM 찾기";
     if (r?.osm) ui.draft.place.osm = r.osm;
+    if (r?.cuisine && $("#f-cat").value === "restaurant") $("#f-cuisine").value = r.cuisine;
     if (r?.hours) {
       $("#f-hours").value = r.hours;
       ui.draft.place.hoursSource = "osm";
@@ -635,6 +646,7 @@ function readForm() {
   d.selected = $("#f-sel").checked;
   d.priority = $("#f-must").checked ? "must" : "want";
   d.mealPref = d.category === "restaurant" ? $("#f-meal").value || null : null;
+  d.cuisine = d.category === "restaurant" ? $("#f-cuisine").value : null;
   const hours = $("#f-hours").value.trim() || null;
   if (hours !== d.hours) d.hoursSource = hours && hours === ui.draft.osmHours ? "osm" : hours ? "manual" : null;
   d.hours = hours;
