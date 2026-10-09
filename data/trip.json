@@ -481,8 +481,8 @@
    "hoursSource": null,
    "slots": [
     {
-     "day": 2,
-     "time": "19:00"
+     "day": 1,
+     "time": "14:00"
     }
    ],
    "pin": {
@@ -495,9 +495,35 @@
    "note": "공연 날짜·시각은 실제 공연 일정에 맞게 수정하세요",
    "osm": null,
    "addedBy": null,
-   "updatedAt": 1760000000000,
    "fixedFromList": true,
-   "addr": "Ambassador Theatre · 219 W 49th St"
+   "addr": "Ambassador Theatre · 219 W 49th St",
+   "mealPref": null,
+   "cuisine": null,
+   "fu": {
+    "id": 1760000000000,
+    "name": 1760000000000,
+    "lat": 1760000000000,
+    "lon": 1760000000000,
+    "category": 1760000000000,
+    "duration": 1760000000000,
+    "hours": 1760000000000,
+    "hoursSource": 1760000000000,
+    "slots": 1791590238390,
+    "pin": 1760000000000,
+    "before": 1760000000000,
+    "priority": 1760000000000,
+    "selected": 1760000000000,
+    "note": 1760000000000,
+    "osm": 1760000000000,
+    "addedBy": 1760000000000,
+    "fixedFromList": 1760000000000,
+    "addr": 1760000000000,
+    "mealPref": 1791590238390,
+    "cuisine": 1791590238390
+   },
+   "baseAt": 1760000000000,
+   "updatedAt": 1791590238390,
+   "updatedBy": "dohyun1411"
   },
   {
    "id": "seed-dumbo",
