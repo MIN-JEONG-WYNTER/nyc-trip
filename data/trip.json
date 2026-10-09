@@ -489,7 +489,7 @@
     "time": null
    },
    "before": null,
-   "priority": "want",
+   "priority": "must",
    "selected": true,
    "note": "315 5th Avenue, Manhattan",
    "osm": {
@@ -497,11 +497,12 @@
     "id": 12662597204
    },
    "addedBy": null,
-   "updatedAt": 1791513290770,
+   "updatedAt": 1791523717866,
    "website": "https://www.nubianinyc.com/",
-   "updatedBy": null,
+   "updatedBy": "dohyun1411",
    "cuisine": "korean",
-   "addr": "315 5th Ave 3층, Koreatown"
+   "addr": "315 5th Ave 3층, Koreatown",
+   "mealPref": null
   },
   {
    "id": "seed-nubiani",
