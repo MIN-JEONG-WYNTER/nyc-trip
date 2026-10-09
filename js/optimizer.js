@@ -8,7 +8,7 @@
 import { parseHours, toMin, weekdayOf } from "./hours.js";
 import { cat, MEAL_WINDOWS, MEAL_SLOTS } from "./categories.js";
 import { travel, distanceKm } from "./geo.js";
-import { districtOf, districtsNear } from "./areas.js";
+import { clusterPoints, nearestCluster, clustersNear, boroughOf, clusterLabel } from "./areas.js";
 
 // must: "꼭 가기"는 이동 상한·권역 제한 같은 다른 어떤 조건보다 우선한다
 const UNSCHEDULED_PENALTY = { must: 100000, want: 1000, extra: 150 };
@@ -24,7 +24,9 @@ const MIN_TRAVEL = { travelWeight: 4, wantPenalty: 250 };
 // 옵션 — 하루 이동 상한(분): 넘는 1분마다 이 비용. "가고 싶음" 장소 하나(1000)보다 크게 잡아, 3분만 넘어도 장소를 빼서 맞춘다
 const OVER_DAILY_COST = 400;
 // 하루에 가는 권역(걸어서 이어지는 동네 묶음) 최대 개수 — 두 개면 서로 가까운 권역이어야 한다
-const MAX_DISTRICTS_PER_DAY = 2; // "그날은 쇼핑 빼줘" 같은 요청을 어긴 곳마다
+const MAX_DISTRICTS_PER_DAY = 2;
+const CLUSTER_INCOMPLETE_COST = 600; // 간 동네의 갈 곳을 빠뜨리면 하나마다 (빼는 벌점에 더해서)
+const CLUSTER_SPLIT_COST = 800; // 한 동네 묶음이 두 날로 나뉘면 (장소 하나 빼는 비용 1000보다 조금 작게) // "그날은 쇼핑 빼줘" 같은 요청을 어긴 곳마다
 const WAIT_WEIGHT = 0.25;
 const BALANCE_WEIGHT = 0.3;
 const FREE_MEAL_COST = 150; // 식당 대신 자유 식사로 채운 끼니
@@ -126,10 +128,29 @@ export function createSolver(trip, wishes = [], prefs = {}) {
       lat: l.lat,
       lon: l.lon,
       ranges: Array.from({ length: nDays }, (_, d) => startRanges({ ...p, hours: l.hours }, d, meta)),
-      district: districtOf(l),
     }));
     ranges[p.id] = Array.from({ length: nDays }, (_, d) => locs[p.id].flatMap((l) => l.ranges[d]).sort((a, b) => a[0] - b[0]));
   }
+
+  // 동네 묶음: 분점 없는 장소들의 실제 위치로 묶고(강 건너는 따로), 체인 지점은 가까운 묶음에 붙인다
+  // (선택 여부와 상관없이 모든 장소로 묶어야 추천 계산·적용·다시 만들기에서 묶음이 똑같다)
+  const clusters = clusterPoints(trip.places.filter((p) => !p.deleted && !(p.branches || []).length).map((p) => ({ key: p.id, lat: p.lat, lon: p.lon })));
+  const C = Object.fromEntries(clusters.map((c) => [c.id, c]));
+  const keyCluster = {};
+  for (const c of clusters) for (const k of c.keys) keyCluster[k] = c.id;
+  for (const p of places)
+    for (const l of locs[p.id]) {
+      if (!(p.branches || []).length) l.district = keyCluster[p.id];
+      else {
+        const nc = nearestCluster(clusters, l);
+        if (nc) l.district = nc.id;
+        else {
+          const id = `s${l.ix}`;
+          C[id] = { id, lat: l.lat, lon: l.lon, borough: boroughOf(l), keys: [], label: null };
+          l.district = id;
+        }
+      }
+    }
 
   // 날짜별로 기대하는 끼니와, 그 끼니의 자유 식사 자리(가상의 장소)
   const expectedMeals = meta.days.map((day, d) =>
@@ -236,7 +257,7 @@ export function createSolver(trip, wishes = [], prefs = {}) {
         let outside = false;
         if (c && !districts.has(c.district)) {
           outside = districts.size >= MAX_DISTRICTS_PER_DAY;
-          for (const x of districts) if (!districtsNear(x, c.district)) outside = true;
+          for (const x of districts) if (!clustersNear(C[x], C[c.district])) outside = true;
         }
         // 꼭 가기, 그리고 "같은 날" 요청으로 묶은 장소는 권역 제한의 예외 (대신 비용)
         if (outside && !mustLevel(p.id) && !p.allowFar) continue;
@@ -351,6 +372,39 @@ export function createSolver(trip, wishes = [], prefs = {}) {
     return groupCost(after) - groupCost(seqs);
   }
 
+  // "간 김에 그 동네 다 보기": 한 동네 묶음이 여러 날로 나뉘면 나뉜 날마다 비용 (체인 지점은 제외 — 어디서든 갈 수 있으니)
+  function clusterDays(seqsOrEvals) {
+    const days = {};
+    seqsOrEvals.forEach((x, d) => {
+      const items = Array.isArray(x) ? x.map((id) => ({ id })) : x.items;
+      for (const it of items) {
+        const p = P[it.id];
+        if (!p || p.freeMeal || (p.branches || []).length) continue;
+        (days[keyCluster[it.id]] ||= new Set()).add(d);
+      }
+    });
+    return days;
+  }
+  function splitCost(evals) {
+    let c = 0;
+    const days = clusterDays(evals);
+    for (const s of Object.values(days)) c += CLUSTER_SPLIT_COST * (s.size - 1);
+    // 동네에 갔는데 그 동네의 갈 곳을 일부만 넣었으면 빠진 곳마다 비용 (한 동네는 통째로 넣을 수 있는 날에)
+    const placed = new Set(evals.flatMap((ev) => ev.items.map((it) => it.id)));
+    for (const k of Object.keys(days))
+      for (const id of C[k]?.keys || []) if (!placed.has(id) && P[id] && P[id].priority !== "extra") c += CLUSTER_INCOMPLETE_COST;
+    return c;
+  }
+  // 장소 하나를 d일에 넣을 때 늘어나는 "동네 나뉨" 비용
+  function splitDelta(seqs, d, id) {
+    const p = P[id];
+    if (!p || p.freeMeal || (p.branches || []).length) return 0;
+    const k = keyCluster[id];
+    const days = new Set();
+    seqs.forEach((seq, i) => seq.forEach((x) => keyCluster[x] === k && !(P[x]?.branches || []).length && days.add(i)));
+    return days.size && !days.has(d) ? CLUSTER_SPLIT_COST : 0;
+  }
+
   // 날짜를 정하지 않은 요청("루프탑은 밤에")이 일정 어디에서도 안 지켜지면 비용
   const anyDayWishes = wishes.filter((w) => w.type === "wish" && w.day == null && w.ids?.size);
   function anyDayMiss(evals) {
@@ -368,7 +422,8 @@ export function createSolver(trip, wishes = [], prefs = {}) {
     const assign = {};
     seqs.forEach((s, d) => s.forEach((id) => (assign[id] = d)));
     const unscheduled = places.map((p) => p.id).filter((id) => assign[id] == null);
-    const cost = evals.reduce((a, e) => a + e.cost, 0) + unscheduled.reduce((a, id) => a + penalty(id), 0) + groupCost(seqs) + anyDayMiss(evals);
+    const cost =
+      evals.reduce((a, e) => a + e.cost, 0) + unscheduled.reduce((a, id) => a + penalty(id), 0) + groupCost(seqs) + anyDayMiss(evals) + splitCost(evals);
     return { seqs, evals, assign, unscheduled, cost };
   }
 
@@ -417,7 +472,7 @@ export function createSolver(trip, wishes = [], prefs = {}) {
       if (!dayAllowed(id, d, sol.assign)) continue;
       const ins = insertInto(d, sol.seqs[d], id);
       if (!ins) continue;
-      const delta = ins.ev.cost - sol.evals[d].cost + groupDelta(sol.seqs, d, id);
+      const delta = ins.ev.cost - sol.evals[d].cost + groupDelta(sol.seqs, d, id) + splitDelta(sol.seqs, d, id);
       if (!best || delta < best.delta) best = { d, seq: ins.seq, ev: ins.ev, delta };
     }
     return best;
@@ -645,7 +700,7 @@ export function createSolver(trip, wishes = [], prefs = {}) {
     return "시간이 부족해요 — 다른 장소를 빼거나 하루 시간을 늘려보세요";
   }
 
-  return { solve, explain, evalDay, expectedMeals, places: P, addTo, removeFrom, dayAllowed, makeSolution, groupDelta };
+  return { solve, explain, evalDay, expectedMeals, places: P, addTo, removeFrom, dayAllowed, makeSolution, groupDelta, clusters: C };
 }
 
 // 추천: 빼면 이동이 크게 줄어드는 곳 / 보류 중이지만 동선에 거의 그대로 끼워 넣을 수 있는 곳
@@ -695,6 +750,18 @@ function suggest(trip, sol, opts) {
   };
 }
 
+function dayAreaLabels(ev, solver) {
+  const votes = new Map();
+  for (const it of ev.items) {
+    const p = solver.places[it.id];
+    if (!p || p.freeMeal) continue;
+    const loc = it.branch ? p.branches[it.branch - 1] : p;
+    const l = clusterLabel(loc);
+    votes.set(l, (votes.get(l) || 0) + 1);
+  }
+  return [...votes.entries()].sort((a, b) => b[1] - a[1]).map(([l]) => l).slice(0, 3);
+}
+
 // 해 → 저장할 일정 (opts.inputsKey가 있으면 그 키를 쓴다 — 앱은 요청 반영 전 원래 여행의 키와 비교하므로)
 function buildSchedule(trip, solver, sol, opts) {
   const unmet = unmetWishes(opts.wishes, sol.evals.map((ev) => ({ items: ev.items })));
@@ -706,7 +773,8 @@ function buildSchedule(trip, solver, sol, opts) {
       items: ev.items,
       back: { travel: ev.back.min, mode: ev.back.mode },
       missingMeals: solver.expectedMeals[d].filter((m) => !ev.meals.has(m)),
-      districts: ev.districts,
+      // 그날 실제로 간 곳들이 가장 많이 속한 동네 이름 (묶음 이름보다 그날에 맞게)
+      districts: dayAreaLabels(ev, solver),
     })),
     suggest: suggest(trip, sol, opts),
     unscheduled: sol.unscheduled.filter((id) => solver.places[id].priority !== "extra").map((id) => ({ id, reason: solver.explain(id, sol) })),

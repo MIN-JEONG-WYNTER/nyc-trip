@@ -87,3 +87,82 @@ export function districtsNear(a, b) {
   if (!da || !db) return false;
   return distanceKm({ lat: da.c[0], lon: da.c[1] }, { lat: db.c[0], lon: db.c[1] }) <= 3;
 }
+
+// ---------- 동네 묶음(클러스터) ----------
+// 이스트 리버 기준으로 맨해튼/브루클린(·퀸스)을 나눈다: 위도별 강 경도를 이어 놓은 선
+const RIVER = [
+  [40.69, -74.02], [40.7, -74.005], [40.704, -73.996], [40.708, -73.99], [40.712, -73.978],
+  [40.717, -73.972], [40.73, -73.966], [40.75, -73.958], [40.78, -73.94], [40.8, -73.93],
+];
+export function boroughOf(loc) {
+  const lat = Math.min(Math.max(loc.lat, RIVER[0][0]), RIVER[RIVER.length - 1][0]);
+  let i = 0;
+  while (i < RIVER.length - 2 && lat > RIVER[i + 1][0]) i++;
+  const [a, b] = [RIVER[i], RIVER[i + 1]];
+  const riverLon = a[1] + ((lat - a[0]) / (b[0] - a[0])) * (b[1] - a[1]);
+  return loc.lon > riverLon ? "brooklyn" : "manhattan";
+}
+
+const CLUSTER_DIAMETER = 1.5; // km — 걸어서 둘러볼 만한 한 동네
+const NEAR_CLUSTER = 2.5; // km — 하루에 같이 갈 수 있는 두 동네 (같은 쪽 강가일 때만)
+const BRANCH_ATTACH = 1.0; // km — 체인 분점은 가까운 동네에 붙인다
+
+// points: [{ key, lat, lon }] → 묶음. 같은 쪽 강가끼리만, 묶음 안 가장 먼 두 곳이 1.5km 이하가 되도록 (완전 연결)
+export function clusterPoints(points) {
+  let groups = points.map((p) => ({ members: [p], borough: boroughOf(p) }));
+  const far = (g, h) => {
+    if (g.borough !== h.borough) return Infinity;
+    let m = 0;
+    for (const a of g.members) for (const b of h.members) m = Math.max(m, distanceKm(a, b));
+    return m;
+  };
+  for (;;) {
+    let best = null;
+    for (let i = 0; i < groups.length; i++)
+      for (let j = i + 1; j < groups.length; j++) {
+        const d = far(groups[i], groups[j]);
+        if (d <= CLUSTER_DIAMETER && (!best || d < best.d)) best = { i, j, d };
+      }
+    if (!best) break;
+    groups[best.i].members.push(...groups[best.j].members);
+    groups.splice(best.j, 1);
+  }
+  return groups.map((g, i) => {
+    const lat = g.members.reduce((a, m) => a + m.lat, 0) / g.members.length;
+    const lon = g.members.reduce((a, m) => a + m.lon, 0) / g.members.length;
+    // 이름: 장소들이 가장 많이 속한 권역 (같으면 중심에서 가까운 쪽)
+    const votes = {};
+    for (const m of g.members) {
+      const l = clusterLabel(m, g.borough);
+      votes[l] = (votes[l] || 0) + 1;
+    }
+    const center = clusterLabel({ lat, lon }, g.borough);
+    const label = Object.keys(votes).sort((a, b) => votes[b] - votes[a] || (b === center) - (a === center))[0];
+    return { id: `c${i}`, lat, lon, borough: g.borough, keys: g.members.map((m) => m.key), label };
+  });
+}
+
+// 묶음 이름: 같은 쪽 강가의 가장 가까운 권역 이름
+export function clusterLabel(loc, borough = boroughOf(loc)) {
+  let best = null;
+  for (const d of Object.values(DISTRICTS)) {
+    const c = { lat: d.c[0], lon: d.c[1] };
+    if (boroughOf(c) !== borough) continue;
+    const km = distanceKm(loc, c);
+    if (!best || km < best.km) best = { km, label: d.label };
+  }
+  return best && best.km <= 2.5 ? best.label : borough === "brooklyn" ? "브루클린" : "맨해튼";
+}
+
+export function nearestCluster(clusters, loc) {
+  const b = boroughOf(loc);
+  let best = null;
+  for (const c of clusters) {
+    if (c.borough !== b) continue;
+    const km = distanceKm(loc, c);
+    if (!best || km < best.km) best = { km, c };
+  }
+  return best && best.km <= BRANCH_ATTACH ? best.c : null;
+}
+
+export const clustersNear = (a, b) => a === b || (a.borough === b.borough && distanceKm(a, b) <= NEAR_CLUSTER);

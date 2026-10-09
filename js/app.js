@@ -174,7 +174,7 @@ function renderPlan() {
   const missing = (day.missingMeals || []).map((m) => MEAL_SLOTS[m]?.label).filter(Boolean);
   $("#dayHead").innerHTML = `<h2>DAY ${d + 1} · ${esc(dayLabel(d))}</h2><p>${names.length ? esc(names.slice(0, 3).join(" → ")) + (names.length > 3 ? " …" : "") : "아직 배정된 곳이 없어요"}</p>
     ${day.items.length ? `<span class="pill">🧭 이날 이동 ${travelText(dayTravel(day))}</span>` : ""}
-    ${day.districts?.length ? `<span class="pill">📍 ${day.districts.map((k) => esc(DISTRICTS[k]?.label || "외곽")).join(" + ")}</span>` : ""}
+    ${day.districts?.length ? `<span class="pill">📍 ${day.districts.map((k) => esc(DISTRICTS[k]?.label || k)).join(" + ")}</span>` : ""}
     ${t.meta.prefs?.maxDaily && dayTravel(day).subway > t.meta.prefs.maxDaily ? `<span class="pill warn">⏱ 지하철 ${t.meta.prefs.maxDaily}분 초과 — 꼭 가기·시간 고정 일정 때문에 더 줄일 수 없어요</span>` : ""}
     ${missing.length ? `<span class="pill warn">⚠️ ${missing.join("·")} 먹을 시간이 없어요</span>` : ""}`;
 
