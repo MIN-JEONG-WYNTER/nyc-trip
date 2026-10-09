@@ -34,3 +34,38 @@ export function areaOf(loc) {
   }
   return best;
 }
+
+// 하루 일정을 짤 때 쓰는 큰 권역 — 걸어서 이어지는 동네끼리 묶었다. 하루에 권역 1~2개만 간다.
+export const DISTRICTS = {
+  downtown: { label: "다운타운", c: [40.7085, -74.0105] }, // FiDi·트라이베카·배터리파크·WTC
+  soho: { label: "소호·노호·놀리타", c: [40.7225, -73.9985] }, // 리틀이태리·로어이스트 일부
+  westvillage: { label: "웨스트빌리지", c: [40.734, -74.0035] },
+  eastvillage: { label: "이스트빌리지·LES", c: [40.7235, -73.986] },
+  chelsea: { label: "첼시·미트패킹", c: [40.7445, -74.0045] },
+  flatiron: { label: "플랫아이언·코리아타운", c: [40.7435, -73.988] },
+  midtown: { label: "미드타운", c: [40.7585, -73.9805] },
+  uws: { label: "어퍼웨스트", c: [40.783, -73.9745] },
+  ues: { label: "어퍼이스트", c: [40.7755, -73.9615] },
+  dumbo: { label: "덤보", c: [40.7015, -73.9895] },
+  williamsburg: { label: "윌리엄스버그", c: [40.7185, -73.9565] },
+};
+
+// 가장 가까운 권역 (2.5km보다 멀면 그 장소만의 권역)
+export function districtOf(loc) {
+  let best = null;
+  let bestKm = Infinity;
+  for (const [k, d] of Object.entries(DISTRICTS)) {
+    const km = distanceKm(loc, { lat: d.c[0], lon: d.c[1] });
+    if (km < bestKm) [best, bestKm] = [k, km];
+  }
+  return bestKm <= 2.5 ? best : `far:${loc.lat.toFixed(2)},${loc.lon.toFixed(2)}`;
+}
+
+// 두 권역을 하루에 같이 가도 되는지 (중심 사이 3km 이내 — 예: 다운타운+덤보, 소호+웨스트빌리지)
+export function districtsNear(a, b) {
+  if (a === b) return true;
+  const da = DISTRICTS[a];
+  const db = DISTRICTS[b];
+  if (!da || !db) return false;
+  return distanceKm({ lat: da.c[0], lon: da.c[1] }, { lat: db.c[0], lon: db.c[1] }) <= 3;
+}

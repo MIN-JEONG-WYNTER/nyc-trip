@@ -1,5 +1,6 @@
 import { Store, REPO, mergeTrips } from "./store.js";
 import { CATEGORIES, CUISINES, MEAL_SLOTS, cat, kindOf } from "./categories.js";
+import { DISTRICTS } from "./areas.js";
 import { parseHours, describeHours, fmtMin, toMin, weekdayOf } from "./hours.js";
 import { generateSchedule, applySuggestion, inputsKey, tripDate } from "./optimizer.js";
 import { parseRequest, describeRule, applyRequests } from "./requests.js";
@@ -162,7 +163,8 @@ function renderPlan() {
   const missing = (day.missingMeals || []).map((m) => MEAL_SLOTS[m].label);
   $("#dayHead").innerHTML = `<h2>DAY ${d + 1} · ${esc(dayLabel(d))}</h2><p>${names.length ? esc(names.slice(0, 3).join(" → ")) + (names.length > 3 ? " …" : "") : "아직 배정된 곳이 없어요"}</p>
     ${day.items.length ? `<span class="pill">🧭 이날 이동 ${travelText(dayTravel(day))}</span>` : ""}
-    ${t.meta.prefs?.maxDaily && dayTravel(day).total > t.meta.prefs.maxDaily ? `<span class="pill warn">⏱ ${t.meta.prefs.maxDaily}분 초과 — 꼭 가기·시간 고정 일정 때문에 더 줄일 수 없어요</span>` : ""}
+    ${day.districts?.length ? `<span class="pill">📍 ${day.districts.map((k) => esc(DISTRICTS[k]?.label || "외곽")).join(" + ")}</span>` : ""}
+    ${t.meta.prefs?.maxDaily && dayTravel(day).subway > t.meta.prefs.maxDaily ? `<span class="pill warn">⏱ 지하철 ${t.meta.prefs.maxDaily}분 초과 — 꼭 가기·시간 고정 일정 때문에 더 줄일 수 없어요</span>` : ""}
     ${missing.length ? `<span class="pill warn">⚠️ ${missing.join("·")} 먹을 시간이 없어요</span>` : ""}`;
 
   const rows = [];

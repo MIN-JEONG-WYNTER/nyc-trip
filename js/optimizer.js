@@ -8,7 +8,7 @@
 import { parseHours, toMin, weekdayOf } from "./hours.js";
 import { cat, MEAL_WINDOWS, MEAL_SLOTS } from "./categories.js";
 import { travel, distanceKm } from "./geo.js";
-import { areaOf } from "./areas.js";
+import { districtOf, districtsNear } from "./areas.js";
 
 const UNSCHEDULED_PENALTY = { must: 5000, want: 1000, extra: 150 }; // extra: 문장 요청 때문에 후보로 들어온 곳
 const WISH_REWARD = 90; // 요청에 맞는 곳 하나를 그날 넣을 때마다 (하루 8곳까지)
@@ -19,8 +19,8 @@ const AVOID_COST = 400;
 const MIN_TRAVEL = { travelWeight: 4, wantPenalty: 250 };
 // 옵션 — 하루 이동 상한(분): 넘는 1분마다 이 비용. "가고 싶음" 장소 하나(1000)보다 크게 잡아, 3분만 넘어도 장소를 빼서 맞춘다
 const OVER_DAILY_COST = 400;
-// 옵션 — 하루 한 동네: 그날 동네가 하나 늘 때마다
-const EXTRA_AREA_COST = 150; // "그날은 쇼핑 빼줘" 같은 요청을 어긴 곳마다
+// 하루에 가는 권역(걸어서 이어지는 동네 묶음) 최대 개수 — 두 개면 서로 가까운 권역이어야 한다
+const MAX_DISTRICTS_PER_DAY = 2; // "그날은 쇼핑 빼줘" 같은 요청을 어긴 곳마다
 const WAIT_WEIGHT = 0.25;
 const BALANCE_WEIGHT = 0.3;
 const FREE_MEAL_COST = 150; // 식당 대신 자유 식사로 채운 끼니
@@ -89,7 +89,7 @@ function mealOf(p, start) {
 }
 
 // wishes: requests.js의 applyRequests가 만든 요청 조건 ({ day, ids, win, accept(id, branch), type, must })
-// prefs: { minTravel, oneArea } (설정의 이동 옵션)
+// prefs: { minTravel, maxDaily } (설정의 이동 옵션)
 export function createSolver(trip, wishes = [], prefs = {}) {
   const travelWeight = prefs.minTravel ? MIN_TRAVEL.travelWeight : 1;
   const meta = trip.meta;
@@ -109,7 +109,7 @@ export function createSolver(trip, wishes = [], prefs = {}) {
       lat: l.lat,
       lon: l.lon,
       ranges: Array.from({ length: nDays }, (_, d) => startRanges({ ...p, hours: l.hours }, d, meta)),
-      area: areaOf(l),
+      district: districtOf(l),
     }));
     ranges[p.id] = Array.from({ length: nDays }, (_, d) => locs[p.id].flatMap((l) => l.ranges[d]).sort((a, b) => a[0] - b[0]));
   }
@@ -165,6 +165,8 @@ export function createSolver(trip, wishes = [], prefs = {}) {
     let travelSum = 0;
     let waitSum = 0;
     const meals = new Set();
+    const districts = new Set();
+    let subwaySum = 0;
     const items = [];
     let mealOff = 0;
     for (let i = 0; i < seq.length; i++) {
@@ -183,7 +185,8 @@ export function createSolver(trip, wishes = [], prefs = {}) {
               break;
             }
           }
-          const via = (l) => tr(prev, l).min + tr(l, next).min;
+          // 이미 간 권역의 지점을 우선하고, 그다음 이동이 짧은 순
+          const via = (l) => tr(prev, l).min + tr(l, next).min + (districts.has(l.district) ? 0 : 1000);
           // 가장 가까운 지점을 먼저 (나머지는 그 지점이 안 될 때만 정렬)
           let bi = 0;
           for (let k = 1; k < cands.length; k++) if (via(cands[k]) < via(cands[bi])) bi = k;
@@ -202,6 +205,8 @@ export function createSolver(trip, wishes = [], prefs = {}) {
       let leg = null;
       let loc = null;
       for (const c of cands) {
+        // 그날 이미 간 권역이 2개면, 그 밖의 지점은 보지 않는다 (먼 분점 탐색도 여기서 걸러짐)
+        if (c && !districts.has(c.district) && (districts.size >= MAX_DISTRICTS_PER_DAY || [...districts].some((x) => !districtsNear(x, c.district)))) continue;
         leg = c ? tr(prev, c) : { min: 0, mode: "none" };
         const arrive = t + leg.min;
         for (const [lo, hi] of c ? c.ranges[d] : ranges[p.id][d]) {
@@ -219,6 +224,7 @@ export function createSolver(trip, wishes = [], prefs = {}) {
         }
       }
       if (start == null) return null;
+      if (loc) districts.add(loc.district);
       const arrive = t + leg.min;
       if (meal) {
         meals.add(meal);
@@ -238,6 +244,7 @@ export function createSolver(trip, wishes = [], prefs = {}) {
         ...(loc && loc.bi ? { branch: loc.bi } : {}),
       });
       travelSum += leg.min;
+      if (leg.mode === "subway") subwaySum += leg.min;
       waitSum += wait;
       t = start + p.duration;
       if (loc) prev = loc;
@@ -262,16 +269,14 @@ export function createSolver(trip, wishes = [], prefs = {}) {
         if (w.day != null && !hits) wishCost += w.must ? WISH_MISS_MUST : WISH_MISS;
       }
     }
-    let areaCost = 0;
-    if (prefs.oneArea) {
-      const areas = new Set();
-      for (const it of items) if (!it.freeMeal) areas.add(locs[it.id][it.branch || 0].area);
-      areaCost = EXTRA_AREA_COST * Math.max(0, areas.size - 1);
-    }
-    const overDaily = prefs.maxDaily ? Math.max(0, travelSum + back.min - prefs.maxDaily) : 0;
+    // 권역 하나로 끝나는 날을 조금 더 선호
+    const areaCost = districts.size > 1 ? 60 : 0;
+    // 상한은 지하철 이동에만 적용 (권역 안에서 걸어 다니는 건 구경으로 본다)
+    const subwayTotal = subwaySum + (back.mode === "subway" ? back.min : 0);
+    const overDaily = prefs.maxDaily ? Math.max(0, subwayTotal - prefs.maxDaily) : 0;
     const cost = travelWeight * (travelSum + back.min) + OVER_DAILY_COST * overDaily + areaCost + WAIT_WEIGHT * waitSum + balance + FREE_MEAL_COST * freeMeals + MISSING_MEAL_COST * missingMeals +
       MEAL_OFF_WEIGHT * mealOff + LATE_START_WEIGHT * lateStart + wishCost;
-    return { items, back, travelSum: travelSum + back.min, waitSum, cost, meals };
+    return { items, back, travelSum: travelSum + back.min, subwayTotal, waitSum, cost, meals, districts: [...districts] };
   }
 
   // 날짜 사이 제약(before 관계가 같은 날이어야 함)
@@ -526,7 +531,7 @@ export function applySuggestion(trip, schedule, { type, id, day }, opts = {}) {
   }
   if (!ev) return null;
   const days = schedule.days.map((d, i) =>
-    i === day ? { items: ev.items, back: { travel: ev.back.min, mode: ev.back.mode }, missingMeals: solver.expectedMeals[i].filter((m) => !ev.meals.has(m)) } : d,
+    i === day ? { items: ev.items, back: { travel: ev.back.min, mode: ev.back.mode }, missingMeals: solver.expectedMeals[i].filter((m) => !ev.meals.has(m)), districts: ev.districts } : d,
   );
   const travelOf = (d) => d.items.reduce((a, it) => a + it.travel, 0) + (d.back?.travel || 0);
   return {
@@ -556,6 +561,7 @@ export function generateSchedule(trip, opts = {}) {
       items: ev.items,
       back: { travel: ev.back.min, mode: ev.back.mode },
       missingMeals: solver.expectedMeals[d].filter((m) => !ev.meals.has(m)),
+      districts: ev.districts,
     })),
     suggest: suggest(trip, sol, opts),
     unscheduled: sol.unscheduled.filter((id) => solver.places[id].priority !== "extra").map((id) => ({ id, reason: solver.explain(id, sol) })),
