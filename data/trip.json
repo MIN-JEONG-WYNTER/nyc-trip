@@ -26,13 +26,23 @@
     "end": "11:00"
    }
   ],
-  "updatedAt": 1791519998240,
+  "maxDailyInit": true,
   "prefs": {
    "maxDaily": false,
    "minTravel": false
   },
-  "maxDailyInit": true,
-  "requests": []
+  "requests": [],
+  "fieldsUpdatedAt": {
+   "title": 1791519998240,
+   "startDate": 1791519998240,
+   "hotel": 1791519998240,
+   "days": 1791519998240,
+   "maxDailyInit": 1791519998240,
+   "prefs.maxDaily": 1791519998240,
+   "prefs.minTravel": 1791519998240,
+   "requests": 1791519998240
+  },
+  "updatedAt": 1791519998240
  },
  "places": [
   {
@@ -2219,6 +2229,78 @@
    "branchesCheckedAt": 1791500000000,
    "source": "request",
    "googleHours": 1
+  },
+  {
+   "id": "n-lukes",
+   "name": "Luke's Lobster",
+   "lat": 40.70452,
+   "lon": -74.01092,
+   "category": "restaurant",
+   "duration": 45,
+   "hours": "Mo 11:00-19:00; Tu 11:00-19:00; We 11:00-19:00; Th 11:00-19:00; Fr 11:00-19:00; Sa 11:00-19:00; Su 11:00-19:00",
+   "hoursSource": "google",
+   "slots": [],
+   "pin": {
+    "day": null,
+    "time": null
+   },
+   "before": null,
+   "priority": "want",
+   "selected": true,
+   "note": "",
+   "osm": {
+    "type": "node",
+    "id": 3239326415
+   },
+   "addedBy": null,
+   "updatedAt": 1791500000030,
+   "cuisine": "seafood",
+   "googleHours": 1,
+   "addr": "26 S William St, FiDi",
+   "branches": [
+    {
+     "label": "Garment District · 1407 Broadway",
+     "lat": 40.75348,
+     "lon": -73.98761,
+     "osm": null,
+     "hours": "Mo 11:00-20:00; Tu 11:00-20:00; We 11:00-20:00; Th 11:00-20:00; Fr 11:00-20:00; Sa 11:00-20:00; Su 11:00-20:00",
+     "googleHours": 1
+    },
+    {
+     "label": "Upper East Side · 242 E 81st St",
+     "lat": 40.77473,
+     "lon": -73.95456,
+     "osm": null,
+     "hours": "Mo 11:00-20:00; Tu 11:00-20:00; We 11:00-20:00; Th 11:00-20:00; Fr 11:00-20:00; Sa 11:00-20:00; Su 11:00-20:00",
+     "googleHours": 1
+    },
+    {
+     "label": "Brooklyn Bridge Park · 11 Water St, DUMBO",
+     "lat": 40.70348,
+     "lon": -73.99414,
+     "osm": null,
+     "hours": "Mo 11:00-20:00; Tu 11:00-20:00; We 11:00-20:00; Th 11:00-20:00; Fr 11:00-21:00; Sa 11:00-21:00; Su 11:00-20:00",
+     "googleHours": 1
+    },
+    {
+     "label": "Upper West Side · 426 Amsterdam Ave",
+     "lat": 40.78421,
+     "lon": -73.97783,
+     "osm": null,
+     "hours": "Mo 11:00-20:00; Tu 11:00-20:00; We 11:00-20:00; Th 11:00-20:00; Fr 11:00-20:00; Sa 11:00-20:00; Su 11:00-20:00",
+     "googleHours": 1
+    },
+    {
+     "label": "Union Square · 124 University Pl",
+     "lat": 40.73481,
+     "lon": -73.99225,
+     "osm": null,
+     "hours": "Mo 11:00-20:00; Tu 11:00-20:00; We 11:00-20:00; Th 11:00-20:00; Fr 11:00-20:00; Sa 11:00-20:00; Su 11:00-19:00",
+     "googleHours": 1
+    }
+   ],
+   "branchesCheckedAt": 1791500000000,
+   "source": "request"
   }
  ],
  "schedule": {
