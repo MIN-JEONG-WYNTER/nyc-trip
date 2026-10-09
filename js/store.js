@@ -124,6 +124,40 @@ function mergeMeta(l, r) {
   return out;
 }
 
+// 장소 수정은 항목별 시각(fu)을 남긴다 — 두 폰이 같은 장소의 다른 항목을 고쳐도 둘 다 살아남게.
+// baseAt: 항목별 시각을 처음 남길 때의 시각 (그 전에 바뀐 항목들의 기준)
+export function stampPlace(p, patch, now, user) {
+  if (!p.fu) {
+    p.fu = {};
+    p.baseAt = p.updatedAt || 0;
+  }
+  for (const k of Object.keys(patch)) p.fu[k] = now;
+  Object.assign(p, patch, { updatedAt: now, updatedBy: user ?? p.updatedBy ?? null });
+  return p;
+}
+const PLACE_META = new Set(["fu", "baseAt", "updatedAt", "updatedBy"]);
+const fieldAt = (p, k) => p.fu?.[k] ?? p.baseAt ?? p.updatedAt ?? 0;
+
+function mergePlace(a, b) {
+  // a = local, b = remote. 같은 시각이면 remote
+  if (!a.fu && !b.fu) return (a.updatedAt || 0) > (b.updatedAt || 0) ? a : b; // 둘 다 예전 형식
+  const out = {};
+  const fu = {};
+  for (const k of new Set([...Object.keys(a), ...Object.keys(b)])) {
+    if (PLACE_META.has(k)) continue;
+    const ta = k in a ? fieldAt(a, k) : -1;
+    const tb = k in b ? fieldAt(b, k) : -1;
+    const src = ta > tb ? a : b;
+    if (k in src) out[k] = src[k];
+    fu[k] = Math.max(ta, tb, 0);
+  }
+  out.fu = fu;
+  out.baseAt = Math.min(a.baseAt ?? a.updatedAt ?? 0, b.baseAt ?? b.updatedAt ?? 0);
+  out.updatedAt = Math.max(a.updatedAt || 0, b.updatedAt || 0);
+  out.updatedBy = (a.updatedAt || 0) > (b.updatedAt || 0) ? a.updatedBy : b.updatedBy;
+  return out;
+}
+
 export function mergeTrips(local, remote) {
   if (!remote) return local;
   if (!local) return remote;
@@ -131,7 +165,7 @@ export function mergeTrips(local, remote) {
   for (const p of remote.places || []) byId.set(p.id, p);
   for (const p of local.places || []) {
     const r = byId.get(p.id);
-    if (!r || (p.updatedAt || 0) > (r.updatedAt || 0)) byId.set(p.id, p);
+    byId.set(p.id, r ? mergePlace(p, r) : p);
   }
   const newer = (a, b, key) => ((a?.[key] || 0) > (b?.[key] || 0) ? a : b);
   return {
@@ -211,7 +245,18 @@ export class Store extends EventTarget {
   updatePlace(id, patch) {
     this.update((t) => {
       const p = t.places.find((x) => x.id === id);
-      if (p) Object.assign(p, patch, { updatedAt: Date.now(), updatedBy: this.user });
+      if (p) stampPlace(p, patch, Date.now(), this.user);
+    });
+  }
+
+  // 장소 삭제 (이 장소를 "먼저 갈 곳"으로 정한 다른 장소의 연결도 끊는다)
+  deletePlace(id) {
+    this.update((t) => {
+      const now = Date.now();
+      for (const p of t.places) {
+        if (p.id === id) stampPlace(p, { deleted: true, selected: false }, now, this.user);
+        else if (p.before === id) stampPlace(p, { before: null }, now, this.user);
+      }
     });
   }
 
@@ -486,13 +531,27 @@ export class Store extends EventTarget {
   static async readSnapshot(hash) {
     const m = /#s=([\w-]+)/.exec(hash);
     if (!m) return null;
+    if (m[1].length > 200000) throw new Error("공유 링크가 너무 커요");
     const kind = m[1][0];
     const b64 = m[1].slice(1).replace(/-/g, "+").replace(/_/g, "/");
     const bin = atob(b64 + "===".slice((b64.length + 3) % 4));
     const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
     if (kind === "z") {
-      const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
-      return migrateTrip(JSON.parse(await new Response(stream).text()));
+      // 압축을 풀면서 2MB를 넘으면 멈춘다 (작은 링크가 거대하게 풀려 폰이 멈추는 것 방지)
+      const reader = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate-raw")).getReader();
+      const chunks = [];
+      let size = 0;
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        size += value.length;
+        if (size > 2e6) {
+          reader.cancel();
+          throw new Error("공유 링크가 너무 커요");
+        }
+        chunks.push(value);
+      }
+      return migrateTrip(JSON.parse(new TextDecoder().decode(await new Blob(chunks).arrayBuffer())));
     }
     return migrateTrip(JSON.parse(new TextDecoder().decode(bytes)));
   }

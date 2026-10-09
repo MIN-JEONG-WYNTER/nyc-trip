@@ -338,7 +338,9 @@ $("#dayTabs").addEventListener("click", (e) => {
 function planInput() {
   const { trip: input, wishes } = applyRequests(trip(), activeRequests(trip()));
   const excludedIds = new Set(input.places.filter((p) => !p.deleted && !p.selected).map((p) => p.id).filter((id) => placeById(id)?.selected));
-  return { input, opts: { wishes, prefs: trip().meta.prefs || {}, inputsKey: inputsKey(trip()), excludedIds } };
+  // 요청 때문에 들어온 곳 (원래는 보류인데 요청으로 선택됨)
+  const forcedIds = new Set(input.places.filter((p) => !p.deleted && p.selected && !placeById(p.id)?.selected).map((p) => p.id));
+  return { input, opts: { wishes, prefs: trip().meta.prefs || {}, inputsKey: inputsKey(trip()), excludedIds, forcedIds } };
 }
 
 function renderRequests() {
@@ -433,7 +435,7 @@ function renderPlaces() {
   }
   const groupKey = (p) => (p.category === "restaurant" ? `food:${CUISINES[p.cuisine] ? p.cuisine : "other"}` : p.category);
   const groupInfo = (k) => (k.startsWith("food:") ? CUISINES[k.slice(5)] : CATEGORIES[k]);
-  const groups = {};
+  const groups = Object.create(null);
   for (const p of list) (groups[groupKey(p)] ||= []).push(p);
   const order = [...Object.keys(CUISINES).map((c) => `food:${c}`), ...Object.keys(CATEGORIES).filter((k) => k !== "restaurant")];
   $("#placeList").innerHTML = order
@@ -813,13 +815,7 @@ function openSheet(place, isNew = false, keepDraft = false) {
   });
   $("#f-del")?.addEventListener("click", () => {
     if (!confirm(`‘${p.name}’을(를) 삭제할까요?`)) return;
-    store.update((t) => {
-      const q = t.places.find((x) => x.id === p.id);
-      Object.assign(q, { deleted: true, selected: false, updatedAt: Date.now() });
-      t.places.forEach((x) => {
-        if (x.before === p.id) Object.assign(x, { before: null, updatedAt: Date.now() });
-      });
-    });
+    store.deletePlace(p.id);
     $("#sheet").close();
     toast("삭제했어요");
   });
@@ -882,7 +878,7 @@ function renderSettings(force = false) {
            <p>저장소 <code>${esc(REPO.owner)}/${esc(REPO.repo)}</code>의 <code>trip-data</code> 브랜치에 자동 저장돼요.${store.lastSync ? ` 마지막 동기화 ${new Date(store.lastSync).toLocaleTimeString("ko-KR")}` : ""}</p>
            <div class="row-actions"><button id="syncNow">지금 동기화</button><button id="logout" class="danger">연결 해제</button></div>`
         : `<p>GitHub 토큰을 한 번 넣으면 이 폰에서 바꾼 내용이 상대방 폰에도 반영돼요. 토큰 없이도 공유된 일정을 볼 수는 있어요.</p>
-           <div class="field" style="margin-top:10px"><input type="text" id="tokenInput" placeholder="ghp_… 또는 github_pat_…" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+           <div class="field" style="margin-top:10px"><input type="password" id="tokenInput" placeholder="ghp_… 또는 github_pat_…" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
            <div class="row-actions"><button id="saveToken" class="primary">연결</button></div>
            <ol>
              <li><b>collaborator</b>: <a href="https://github.com/settings/tokens/new?scopes=public_repo&description=nyc-trip" target="_blank" rel="noopener">이 링크</a>로 classic 토큰 만들기 (<code>public_repo</code>가 체크된 채로 열려요) → 맨 아래 <b>Generate token</b></li>
@@ -893,6 +889,8 @@ function renderSettings(force = false) {
   </div>`;
 
   const m = trip().meta;
+  // 화면에 그린 값 — 저장할 때 바뀐 칸만 골라내는 기준
+  ui.settingsBase = { days: structuredClone(m.days), hotel: { name: m.hotel.name, lat: String(num(m.hotel.lat)), lon: String(num(m.hotel.lon)) } };
   $("#tripSection").innerHTML = `<div class="card">
     <h3>🗓 여행 시간</h3>
     <p>하루에 호텔을 나설 수 있는 가장 이른 시각과 돌아와야 하는 시각이에요. 첫날 시작은 체크인, 마지막 날 끝은 체크아웃이에요.</p>
@@ -930,15 +928,24 @@ $("#view-settings").addEventListener("click", async (e) => {
   }
   if (id === "syncNow") store.sync({ force: true });
   if (id === "saveTrip") {
+    // 이 화면에서 실제로 바꾼 칸만 반영한다 (그 사이 상대 폰이 바꾼 다른 칸은 그대로)
+    const base = ui.settingsBase || { days: [], hotel: {} };
+    const pick = (formVal, baseVal, curVal) => (formVal && formVal !== baseVal ? formVal : curVal);
     const days = trip().meta.days.map((d, i) => ({
-      start: document.querySelector(`[data-daystart="${i}"]`).value || d.start,
-      end: document.querySelector(`[data-dayend="${i}"]`).value || d.end,
+      start: pick(document.querySelector(`[data-daystart="${i}"]`).value, base.days[i]?.start, d.start),
+      end: pick(document.querySelector(`[data-dayend="${i}"]`).value, base.days[i]?.end, d.end),
     }));
     if (days.some((d) => toMin(d.end) <= toMin(d.start))) return toast("끝 시각이 시작보다 늦어야 해요");
-    const lat = +$("#hotelLat").value;
-    const lon = +$("#hotelLon").value;
     const h = trip().meta.hotel;
-    store.updateMeta({ days, hotel: { name: $("#hotelName").value.trim() || h.name, lat: lat || h.lat, lon: lon || h.lon } });
+    const latIn = $("#hotelLat").value;
+    const lonIn = $("#hotelLon").value;
+    const lat = latIn !== String(base.hotel.lat) ? +latIn : h.lat;
+    const lon = lonIn !== String(base.hotel.lon) ? +lonIn : h.lon;
+    // 뉴욕 근처가 아니면 저장하지 않는다 (경도 부호 실수 등)
+    if (!(lat > 40.45 && lat < 41.0 && lon > -74.35 && lon < -73.65)) return toast("호텔 좌표가 뉴욕이 아니에요. 예: 40.70983, -74.01402 (경도는 음수)", 4000);
+    const nameIn = $("#hotelName").value.trim();
+    const name = nameIn && nameIn !== base.hotel.name ? nameIn : h.name;
+    store.updateMeta({ days, hotel: { name, lat, lon } });
     toast("저장했어요");
     renderSettings(true);
   }
@@ -990,6 +997,9 @@ store.addEventListener("status", () => {
   renderHeader();
   if (ui.view === "settings" && !document.activeElement?.closest("#view-settings input")) renderSettings();
 });
+
+// 오프라인에서도 열리도록 (sw.js 참고)
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 
 async function init() {
   $("#requestHint").textContent = REQUEST_HINT;

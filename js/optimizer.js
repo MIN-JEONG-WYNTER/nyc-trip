@@ -18,7 +18,7 @@ const WISH_MISS = 2500; // 날짜를 정한 요청이 그날 하나도 안 지�
 const WISH_MISS_MUST = 6000;
 const AVOID_COST = 3000; // "그날은 쇼핑 빼줘"·"쇼핑은 첫째날에만"을 어긴 곳마다 — 장소를 빼는 것(1000)보다 크게
 const GROUP_DAYS_COST = 5000; // "N일에 몰아서"를 넘긴 날마다 — 그 종류 장소를 빼서라도 지킨다
-const MAX_PLACES_COST = 300; // "그날은 N곳만" 요청에서 넘는 장소 하나마다
+const MAX_PLACES_COST = 1500; // "그날은 N곳만"·"여유롭게"에서 넘는 장소 하나마다 — 장소를 빼서라도 지킨다
 // 옵션 — 이동 최소: 이동 1분을 더 무겁게 보고, 멀리 있는 "가고 싶음" 장소는 빠질 수 있게 한다
 const MIN_TRAVEL = { travelWeight: 4, wantPenalty: 250 };
 // 옵션 — 하루 이동 상한(분): 넘는 1분마다 이 비용. "가고 싶음" 장소 하나(1000)보다 크게 잡아, 3분만 넘어도 장소를 빼서 맞춘다
@@ -238,7 +238,8 @@ export function createSolver(trip, wishes = [], prefs = {}) {
           outside = districts.size >= MAX_DISTRICTS_PER_DAY;
           for (const x of districts) if (!districtsNear(x, c.district)) outside = true;
         }
-        if (outside && p.priority !== "must") continue;
+        // 꼭 가기, 그리고 "같은 날" 요청으로 묶은 장소는 권역 제한의 예외 (대신 비용)
+        if (outside && !mustLevel(p.id) && !p.allowFar) continue;
         leg = c ? tr(prev, c) : NO_LEG;
         const arrive = t + leg.min;
         for (const [lo, hi] of c ? c.ranges[d] : ranges[p.id][d]) {
@@ -300,7 +301,7 @@ export function createSolver(trip, wishes = [], prefs = {}) {
         wishCost += MAX_PLACES_COST * Math.max(0, items.filter((it) => !it.freeMeal).length - w.max);
         continue;
       }
-      const hits = items.filter((it) => w.ids.has(it.id) && (!w.win || (it.start >= w.win[0] && it.start < w.win[1])) && (!w.accept || w.accept(it.id, it.branch || 0))).length;
+      const hits = items.filter((it) => w.ids.has(it.id) && (!w.win || (it.start >= w.win[0] && it.start <= w.win[1])) && (!w.accept || w.accept(it.id, it.branch || 0))).length;
       if (w.type === "avoid") wishCost += AVOID_COST * hits;
       else {
         wishCost -= WISH_REWARD * Math.min(hits, 8);
@@ -633,7 +634,7 @@ export function createSolver(trip, wishes = [], prefs = {}) {
     return "시간이 부족해요 — 다른 장소를 빼거나 하루 시간을 늘려보세요";
   }
 
-  return { solve, explain, evalDay, expectedMeals, places: P, addTo, removeFrom, dayAllowed, makeSolution };
+  return { solve, explain, evalDay, expectedMeals, places: P, addTo, removeFrom, dayAllowed, makeSolution, groupDelta };
 }
 
 // 추천: 빼면 이동이 크게 줄어드는 곳 / 보류 중이지만 동선에 거의 그대로 끼워 넣을 수 있는 곳
@@ -654,7 +655,8 @@ function suggest(trip, sol, opts) {
     for (const id of seq) {
       const p = original[id];
       // 꼭 가기·고정한 곳·요청으로 들어온 후보는 제외
-      if (!p || !p.selected || p.priority === "must" || p.priority === "extra" || isPinned(p)) continue;
+      // 문장 요청이 직접 넣은 곳(opts.forcedIds)도 빼면 다음에 다시 들어오므로 제외
+      if (!p || !p.selected || p.priority === "must" || p.priority === "extra" || isPinned(p) || opts.forcedIds?.has(id)) continue;
       const { ev } = probe.removeFrom(d, seq, id);
       if (ev && base.travelSum - ev.travelSum >= SUGGEST_REMOVE_MIN) remove.push({ id, day: d, save: base.travelSum - ev.travelSum });
     }
@@ -669,6 +671,8 @@ function suggest(trip, sol, opts) {
       if (!probe.dayAllowed(p.id, d, assign)) return; // before 관계는 같은 날이어야 한다
       const base = probe.evalDay(d, seq);
       const ins = base && probe.addTo(d, seq, p.id);
+      // "N일에 몰아서"를 깨는 날에는 추천하지 않는다
+      if (ins && probe.groupDelta(sol.seqs, d, p.id) > 0) return;
       // 적용할 때와 같은 기준(비용이 가장 낮은 자리)으로 고르고, 그 자리의 이동 증가를 보여준다
       if (ins && (!best || ins.ev.cost - base.cost < best.dc)) best = { id: p.id, day: d, extra: ins.ev.travelSum - base.travelSum, dc: ins.ev.cost - base.cost };
     });
@@ -736,9 +740,14 @@ export function unmetWishes(wishes, days) {
   const out = [];
   for (const w of wishes || []) {
     if (!w.label) continue;
-    const dayItems = (d) => (days[d]?.items || []).filter((it) => w.ids?.has(it.id) && (!w.win || (it.start >= w.win[0] && it.start < w.win[1])) && (!w.accept || w.accept(it.id, it.branch || 0)));
-    if (w.type === "wish" && w.day != null && !dayItems(w.day).length) out.push(w.label);
-    if (w.type === "avoid" && w.day != null && dayItems(w.day).length) out.push(w.label);
+    const dayItems = (d) => (days[d]?.items || []).filter((it) => w.ids?.has(it.id) && (!w.win || (it.start >= w.win[0] && it.start <= w.win[1])) && (!w.accept || w.accept(it.id, it.branch || 0)));
+    const anyDay = days.some((_, d) => dayItems(d).length);
+    if (w.type === "wish" && !w.ids?.size) out.push(`${w.label} (맞는 장소가 없어요)`);
+    else if (w.type === "wish" && (w.day != null ? !dayItems(w.day).length : !anyDay)) out.push(w.label);
+    if (w.type === "avoid" && (w.day != null ? dayItems(w.day).length : anyDay)) out.push(w.label);
+    if (w.type === "maxPlaces")
+      for (let d = 0; d < days.length; d++)
+        if ((w.day == null || w.day === d) && (days[d]?.items || []).filter((it) => !it.freeMeal).length > w.max) out.push(`${w.label} (DAY ${d + 1})`);
     if (w.type === "groupDays" && days.filter((_, d) => dayItems(d).length).length > w.maxDays) out.push(w.label);
   }
   return [...new Set(out)];

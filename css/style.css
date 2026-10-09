@@ -163,3 +163,9 @@ details.adv summary{font-size:13px;font-weight:700;cursor:pointer;margin-bottom:
   .wrap{box-shadow:0 0 35px rgba(0,0,0,.05);min-height:100vh}
   .sheet{margin:auto;border-radius:22px}
 }
+
+/* 띄어쓰기 없는 긴 이름(링크 등)이 화면을 옆으로 넓히지 않게 */
+.item>*,.sg .body,.req .body,.place .info,.result .info{min-width:0}
+.card h3,.card p,.sg b,.req .body,.day-head p,.leg{overflow-wrap:anywhere}
+.sheet{overflow-x:hidden}
+.sheet input,.sheet select,.sheet textarea{max-width:100%}

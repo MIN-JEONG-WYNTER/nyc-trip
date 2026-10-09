@@ -2,7 +2,7 @@
 // 문장을 쉼표·마침표·"그리고"·날짜 표현 앞에서 나누고, "말고/대신" 앞부분은 부정으로 본다.
 // 각 부분에서 날짜, 시간대, 동네, 종류·메뉴, 장소 이름, 부정/강조 표현, 귀가·출발 시각을 찾는다.
 import { CUISINES } from "./categories.js";
-import { distanceKm } from "./geo.js";
+import { distanceKm, travel } from "./geo.js";
 import { weekdayOf, toMin } from "./hours.js";
 import { tripDate } from "./optimizer.js";
 import { AREAS, findArea } from "./areas.js";
@@ -45,10 +45,10 @@ const CUISINE_WORDS = {
 const ALIASES = {
   모마: "moma", 메트: "metropolitan", 메트로폴리탄: "metropolitan", 자연사박물관: "natural history", 첼시마켓: "chelsea market",
   피터루거: "peter luger", 킨스: "keens", 벤자민: "benjamin", 누비아니: "nubiani", 누벨루즈: "nubeluz", 서밋: "summit", 써밋: "summit",
-  자유의여신상: "statue of liberty", 여신상: "statue of liberty", 시카고: "chicago", 버드랜드: "birdland", 카츠: "katz", 레비앙: "levain",
+  자유의여신상: "statue of liberty", 여신상: "statue of liberty", 시카고: "chicago (ambassador", 러시: "러시 티켓", 러쉬: "러시 티켓", 버드랜드: "birdland", 카츠: "katz", 레비앙: "levain",
   르뱅: "levain", 매그놀리아: "magnolia", 키스: "kith", 슈프림: "supreme", 스투시: "stüssy", 세포라: "sephora", 룰루레몬: "lululemon",
   알로: "alo", 스킴스: "skims", 글로시에: "glossier", 빅토리아시크릿: "victoria", 센츄리21: "century 21", 센추리21: "century 21",
-  스타벅스: "starbucks", 리저브: "starbucks reserve", 오큘러스: "oculus", 덤보: "dumbo", 레온: "leon's bagels", 리온: "leon's bagels",
+  스타벅스: "starbucks", 리저브: "starbucks reserve", 오큘러스: "oculus", 메모리얼: "9/11 memorial", "911": "9/11 memorial", 그라운드제로: "9/11 memorial", 덤보: "dumbo", 레온: "leon's bagels", 리온: "leon's bagels",
   루크스: "luke's lobster", 루크스랍스터: "luke's lobster",
 };
 // 별칭이 다른 말의 일부로 쓰인 경우 (메트로 타고, 키스 해링, 시카고 피자)
@@ -133,7 +133,8 @@ function findKind(lower) {
 export function matchesPlace(p, cond, loc = p) {
   if (cond.area) {
     const a = AREAS[cond.area];
-    if (distanceKm(loc, { lat: a.c[0], lon: a.c[1] }) > a.r) return false;
+    const centers = a.centers || [a.c];
+    if (!centers.some((c) => distanceKm(loc, { lat: c[0], lon: c[1] }) <= a.r)) return false;
   }
   if (cond.kind) {
     const k = KINDS.find((x) => x.label === cond.kind);
@@ -157,6 +158,16 @@ function clockMin(m, guess) {
   } else if (h === 12 && /밤/.test(m[1] || "")) h = 24;
   return h * 60 + min;
 }
+// 귀가 시각은 밤 기준: "12시까지" = 자정, "1시까지"·"새벽 2시" = 다음날 새벽 (오전·낮을 말하면 그대로)
+function endClockMin(m) {
+  const h = +m[2];
+  const explicitDay = /오전|아침/.test(m[1] || "") || /낮/.test(m[0]);
+  const v = clockMin(m, (x) => (x <= 5 ? x + 24 : x + 12));
+  if (v == null) return null;
+  if (h === 12 && !explicitDay) return 24 * 60 + (v % 60);
+  if (/새벽/.test(m[1] || "") && h <= 6) return (h + 24) * 60 + (v % 60);
+  return v;
+}
 const hhmm = (min) => `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
 
 // 귀가·출발·여유 표현 → 규칙
@@ -167,19 +178,22 @@ function timeRules(clause, day) {
   let m;
   if ((m = new RegExp(`${CLOCK.source}\\s*(까지|전에|이전에|전까지)\\s*(?:는|은)?\\s*${home}`).exec(t)) || (m = new RegExp(`${home}.{0,6}?${CLOCK.source}\\s*(까지|전)`).exec(t))) {
     const c = m[1] && /귀가|들어|숙소|호텔|복귀/.test(m[1]) ? m.slice(1) : m;
-    const min = clockMin(c, (h) => h + 12);
+    const min = endClockMin(c);
     if (min != null) out.push({ type: "dayEnd", day, time: hhmm(min), mode: "set" });
   } else if (/(일찍|빨리)\s*(귀가|들어|숙소|호텔|복귀)/.test(t)) out.push({ type: "dayEnd", day, time: "20:00", mode: "min" });
-  if ((m = new RegExp(`${CLOCK.source}\\s*(?:에|쯤|부터|에는)?\\s*(출발|나가|나서|시작)`).exec(t)) || (m = new RegExp(`${CLOCK.source}\\s*부터`).exec(t))) {
+  if ((m = new RegExp(`${CLOCK.source}\\s*(?:에|쯤|부터|에는)?\\s*(출발|나가|나서|시작)`).exec(t))) {
     const min = clockMin(m, (h) => (h <= 5 ? h + 12 : h));
     if (min != null) out.push({ type: "dayStart", day, time: hhmm(min), mode: "set" });
   } else if (/늦잠|늦게\s*(시작|나가|출발|일어)|느지막|천천히\s*(나가|출발|시작)/.test(t)) out.push({ type: "dayStart", day, time: "10:30", mode: "max" });
-  if (/여유롭|여유 ?있게|느긋|널널/.test(t)) out.push({ type: "maxPlaces", day, max: 4 });
+  // "하루에 3곳만", "그날은 두 군데 정도" → 그날(또는 매일) 장소 수
+  const cnt = /(\d+|한|두|세|네|다섯|여섯)\s*(곳|군데)\s*(만|정도|까지|이하)?/.exec(t);
+  if (cnt) out.push({ type: "maxPlaces", day, max: /\d/.test(cnt[1]) ? +cnt[1] : { 한: 1, 두: 2, 세: 3, 네: 4, 다섯: 5, 여섯: 6 }[cnt[1]] });
+  else if (/여유롭|여유 ?있게|느긋|널널/.test(t)) out.push({ type: "maxPlaces", day, max: 4 });
   return out;
 }
 
 // 부정 표현: "빼/제외/싫/…"와 "~지 않/~지 마"가 함께 있으면 서로 뒤집힘 ("빼고 싶지 않아"). "안 가본"은 부정이 아님
-const NEG = /빼|제외|안\s*가(?!\s*본|\s*봤)|싫|취소|없이/;
+const NEG = /빼|제외|안\s*(?:가(?!\s*본|\s*봤)|갈|갑|감|할|해|하|함)|싫|취소|없이/;
 const NOT = /[지진]\s*않|지\s*말|지\s*마/;
 
 // 문장 → 부분 목록 { text, neg(말고 앞부분), link(다음 부분과 짝) }
@@ -211,9 +225,9 @@ function splitClauses(text) {
 // 문장 하나 → 규칙 목록
 // "쇼핑은 하루에 몰아서", "박물관은 이틀에 나눠서" → 그 종류가 들어가는 날 수
 const GROUP_DAYS = [
-  [/(하루|한\s*날|1\s*일)(?!\s*차)\s*(?:에만|에|만|동안)/, 1],
-  [/(이틀|두\s*날|2\s*일)(?!\s*차)\s*(?:에만|에|만|동안)/, 2],
-  [/(사흘|세\s*날|3\s*일)(?!\s*차)\s*(?:에만|에|만|동안)/, 3],
+  [/(하루|한\s*날|(?<!\d)1\s*일)(?!\s*차)\s*(?:에만|에|만|동안)/, 1],
+  [/(이틀|두\s*날|(?<!\d)2\s*일)(?!\s*차)\s*(?:에만|에|만|동안)/, 2],
+  [/(사흘|세\s*날|(?<!\d)3\s*일)(?!\s*차)\s*(?:에만|에|만|동안)/, 3],
 ];
 
 // 문장 전체에 걸친 종류 규칙: N일에 몰기 / 특정 날에만 / 매일
@@ -227,13 +241,20 @@ function groupRule(text, trip) {
   const cond = { area, kind: cuisine ? null : kind, cuisine };
   const n = GROUP_DAYS.find(([re]) => re.test(text))?.[1];
   if (n && !/(\d+|한|두|세|네|다섯)\s*(곳|군데|개)/.test(text)) return { type: "groupDays", cond, maxDays: n }; // "하루에 두 곳"은 개수 얘기라 제외
-  const days = [...new Set(splitClauses(text).map((c) => findDay(c.text, trip.meta)).filter((d) => d != null))];
-  if (days.length >= 2 && !NEG.test(text)) return { type: "onlyDays", cond, days: days.sort((a, b) => a - b) };
+  const clauses = splitClauses(text);
+  const dated = clauses.filter((c) => findDay(c.text, trip.meta) != null);
+  const days = [...new Set(dated.map((c) => findDay(c.text, trip.meta)))];
+  // 날짜마다 다른 종류를 말했으면("첫째날 쇼핑 둘째날 박물관") 날짜별 요청이지 "그 날에만"이 아니다
+  const condKey = (c) => findKind(c.text.toLowerCase()) || Object.keys(CUISINE_WORDS).find((k) => has(c.text.toLowerCase(), CUISINE_WORDS[k])) || null;
+  const kinds = new Set(dated.map(condKey).filter(Boolean));
+  if ((days.length >= 2 || (days.length === 1 && /날에만|날만/.test(text))) && !NEG.test(text) && !/말고|대신/.test(text) && kinds.size <= 1)
+    return { type: "onlyDays", cond, days: days.sort((a, b) => a - b) };
   if (/매일|날마다/.test(text) && !/귀가|들어가|출발|늦잠|일찍/.test(text)) return { type: "everyDay", cond };
   return null;
 }
 
 export function parseRequest(text, trip) {
+  text = String(text || "").replace(/쨋\s*날/g, "째날");
   const places = trip.places.filter((p) => !p.deleted);
   const g = groupRule(text, trip);
   if (g) return [g];
@@ -248,7 +269,7 @@ export function parseRequest(text, trip) {
     const part = Object.keys(PARTS).find((k) => has(lower, PARTS[k].words)) || null;
     const neg = c.neg || NEG.test(c.text) !== NOT.test(c.text);
     const must = /꼭|무조건|반드시|필수/.test(c.text);
-    const times = neg ? [] : timeRules(c.text, /매일|날마다/.test(c.text) ? null : day);
+    const times = timeRules(c.text, /매일|날마다/.test(c.text) ? null : day);
     let found = findPlaces(c.text, places);
     let area = findArea(lower);
     const kind = findKind(lower);
@@ -263,7 +284,7 @@ export function parseRequest(text, trip) {
     }
     const ids = found.map((f) => f.id);
     const cond = !ids.length && (area || kind || cuisine) ? { area, kind: cuisine ? null : kind, cuisine } : null;
-    items.push({ ownDay, day, part, neg, must, ids, cond, link: c.link, times });
+    items.push({ ownDay, day, part, neg, must, ids, cond, link: c.link, times, near: /근방|근처|주변|일대/.test(c.text), kind });
   }
   // "A 말고 B": 한쪽에만 대상이 있으면 다른 쪽도 같은 대상 ("피터루거는 둘째날 말고 셋째날")
   items.forEach((it, i) => {
@@ -278,9 +299,19 @@ export function parseRequest(text, trip) {
     const { day, part, must, ids, cond } = it;
     if (ids.length) {
       if (it.neg) rules.push(it.ownDay != null ? { type: "avoid", day: it.ownDay, part, ids } : { type: "exclude", ids, day: null });
-      else if (day != null || part) rules.push({ type: "wish", day, part, ids, must });
+      else if (day != null || (part && !it.near)) rules.push({ type: "wish", day, part: it.near ? null : part, ids, must });
       else rules.push({ type: must ? "must" : "include", ids });
+      // "메모리얼 및 근방 구경" → 그 장소 근처(800m)의 곳들도 같은 날에. "근처에서 점심" → 근처 식당
+      if (it.near && !it.neg) {
+        const kind = (part === "lunch" || part === "evening") && (!it.kind || /맛집/.test(it.kind)) ? "맛집" : it.kind && !/맛집/.test(it.kind) ? it.kind : null;
+        rules.push({ type: "wish", day, part, near: ids, cond: kind ? { kind } : null, must: false });
+      }
     } else if (cond) rules.push({ type: it.neg ? "avoid" : "wish", day, part, cond, must: it.neg ? false : must });
+  }
+  // "누비아니랑 자연사 박물관 같은 날" → 같은 날에 넣기
+  if (/같은\s*날|한\s*날에|하루에\s*같이|같이\s*하루/.test(text)) {
+    const ids = [...new Set(items.filter((x) => !x.neg).flatMap((x) => x.ids))];
+    if (ids.length >= 2) rules.push({ type: "sameDay", ids });
   }
   return rules;
 }
@@ -290,12 +321,14 @@ export function describeRule(rule, trip) {
   const when = rule.day != null ? `DAY ${rule.day + 1}` : "매일";
   if (rule.type === "dayEnd") return `${when} · ${rule.time}까지 귀가`;
   if (rule.type === "dayStart") return `${when} · ${rule.time} 이후 출발`;
-  if (rule.type === "maxPlaces") return `${when} · 여유롭게(${rule.max}곳 정도)`;
+  if (rule.type === "maxPlaces") return `${when} · ${rule.max}곳 정도로`;
   const condText = (c) =>
     [c.area && AREAS[c.area].label, c.kind, c.cuisine && `${CUISINES[c.cuisine].icon} ${CUISINES[c.cuisine].label}`].filter(Boolean).join(" · ");
-  if (rule.type === "groupDays") return `${condText(rule.cond)} → ${rule.maxDays}일에 몰기`;
+  if (rule.type === "groupDays") return `${condText(rule.cond)} → ${rule.maxDays === 1 ? "하루에 몰기" : `${rule.maxDays}일 안에`}`;
   if (rule.type === "onlyDays") return `${condText(rule.cond)} → ${rule.days.map((d) => `DAY ${d + 1}`).join("·")}에만`;
   if (rule.type === "everyDay") return `${condText(rule.cond)} → 매일 넣기`;
+  if (rule.type === "sameDay") return `${rule.ids.map(name).join(", ")} → 같은 날에`;
+  if (rule.near) return `${rule.day != null ? `DAY ${rule.day + 1} · ` : ""}${rule.near.map(name).join(", ")} 근처${rule.cond?.kind ? ` · ${rule.cond.kind}` : ""} → 넣기`;
   const bits = [];
   if (rule.day != null) bits.push(`DAY ${rule.day + 1}`);
   if (rule.part) bits.push(PARTS[rule.part].label);
@@ -308,6 +341,19 @@ export function describeRule(rule, trip) {
 }
 
 // 하루 시작·끝 바꾸기 (그날 또는 매일). 끝은 시작+60분보다 이르지 않게, 첫날 체크인·마지막날 체크아웃은 넘지 않게
+// 그날 시각이 정해진 꼭 가기·고정 일정들 [시작 분, 장소]
+function fixedTimes(t, d) {
+  const out = [];
+  for (const p of t.places) {
+    if (p.deleted || !p.selected) continue;
+    const pinned = p.pin && (p.pin.day === d || p.pin.day == null) && toMin(p.pin.time) != null;
+    if (pinned && (p.pin.day === d || p.priority === "must")) out.push([toMin(p.pin.time), p]);
+    if (p.priority !== "must") continue;
+    for (const sl of p.slots || []) if ((sl.day === d || (sl.day == null && (p.slots || []).length === 1)) && toMin(sl.time) != null) out.push([toMin(sl.time), p]);
+  }
+  return out;
+}
+
 function applyTime(t, orig, rule) {
   const n = t.meta.days.length;
   for (let d = 0; d < n; d++) {
@@ -321,15 +367,13 @@ function applyTime(t, orig, rule) {
       end = rule.mode === "min" ? Math.min(end, v) : v;
       if (d === n - 1) end = Math.min(end, toMin(orig[d].end));
       end = Math.max(end, start + 60);
-      // 그날 시각이 정해진 꼭 가기 일정(예: 19:00 공연)은 끝날 때까지 + 귀가 여유 30분은 남긴다
-      for (const p of t.places) {
-        if (p.deleted || !p.selected || p.priority !== "must") continue;
-        for (const sl of p.slots || []) if (sl.day === d && toMin(sl.time) != null) end = Math.max(end, toMin(sl.time) + (p.duration || 0) + 30);
-      }
+      // 그날 시각이 정해진 꼭 가기·고정 일정(예: 19:00 공연)은 끝나고 호텔까지 갈 시간까지 남긴다
+      for (const [at, p] of fixedTimes(t, d)) end = Math.max(end, at + (p.duration || 0) + travel(p, t.meta.hotel).min + 5);
       if (d === n - 1) end = Math.min(end, toMin(orig[d].end));
     } else {
       start = rule.mode === "max" ? Math.max(start, v) : v;
       if (d === 0) start = Math.max(start, toMin(orig[0].start));
+      for (const [at, p] of fixedTimes(t, d)) start = Math.min(start, at - travel(t.meta.hotel, p).min - 5);
       start = Math.min(start, end - 60);
     }
     Object.assign(day, { start: hhmm(start), end: hhmm(end) });
@@ -358,6 +402,25 @@ export function applyRequests(trip, requests) {
         applyTime(t, orig, rule);
         continue;
       }
+      if (rule.type === "sameDay") {
+        // 같은 날: 그 장소들이 들어간 날이 하루를 넘으면 큰 비용 (groupDays와 같은 방식)
+        const ids = rule.ids.filter((id) => !excluded.has(id));
+        for (const p of live) if (ids.includes(p.id)) Object.assign(p, { allowFar: true }) && named(p, false);
+        wishes.push({ type: "groupDays", maxDays: 1, ids: new Set(ids), label: describeRule(rule, trip) });
+        continue;
+      }
+      if (rule.near) {
+        // 장소 근처(800m 안, 분점 포함)의 곳들 — 종류 조건이 있으면 그 종류만. 근처 곳들은 못 넣어도 되는 후보
+        const centers = live.filter((p) => rule.near.includes(p.id));
+        const close = (loc) => centers.some((c) => distanceKm(loc, c) <= 0.8);
+        const ids = live
+          .filter((p) => !excluded.has(p.id) && !rule.near.includes(p.id))
+          .filter((p) => (!rule.cond || matchesPlace(p, rule.cond)) && (close(p) || (p.branches || []).some(close)))
+          .map((p) => p.id);
+        for (const p of live) if (ids.includes(p.id) && !p.selected) Object.assign(p, { selected: true, priority: "extra" });
+        wishes.push({ type: "wish", day: rule.day, part: rule.part, ids: new Set(ids), win: rule.part ? PARTS[rule.part].win : null, accept: null, label: describeRule(rule, trip) });
+        continue;
+      }
       if (rule.type === "groupDays" || rule.type === "onlyDays" || rule.type === "everyDay") {
         const ids = live.filter((p) => !excluded.has(p.id) && (matchesPlace(p, rule.cond) || (p.branches || []).some((b) => matchesPlace(p, rule.cond, b)))).map((p) => p.id);
         const n = t.meta.days.length;
@@ -373,7 +436,7 @@ export function applyRequests(trip, requests) {
         continue;
       }
       if (rule.type === "maxPlaces") {
-        wishes.push({ type: "maxPlaces", day: rule.day, max: rule.max, ids: new Set() });
+        wishes.push({ type: "maxPlaces", day: rule.day, max: rule.max, ids: new Set(), label: describeRule(rule, trip) });
         continue;
       }
       if (rule.type === "exclude") {
@@ -393,7 +456,9 @@ export function applyRequests(trip, requests) {
           if (!ids.includes(p.id)) continue;
           if (rule.ids) named(p, rule.must); // 장소 이름을 직접 말함 — 못 넣으면 알려줘야 함
           else if (!p.selected) Object.assign(p, { selected: true, priority: "extra" }); // 조건 때문에 들어온 후보 — 못 넣어도 괜찮음
-          if (rule.ids && rule.day != null) p.pin = { ...(p.pin || {}), day: rule.day };
+          // 날짜를 고정하되, 공연처럼 정해진 날짜가 있는 곳은 그 날짜와 맞을 때만 (안 맞으면 못 지킨 요청으로 표시됨)
+          const slotDays = (p.slots || []).map((x) => x.day).filter((x) => x != null);
+          if (rule.ids && rule.day != null && (!slotDays.length || slotDays.includes(rule.day))) p.pin = { ...(p.pin || {}), day: rule.day };
           if (rule.ids && rule.part) p.reqWindow = PARTS[rule.part].win;
         }
       }

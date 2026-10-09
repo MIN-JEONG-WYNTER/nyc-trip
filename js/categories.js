@@ -27,7 +27,7 @@ export const CATEGORIES = {
   other: { label: "기타", icon: "📍", dur: 60, hours: [h(0, 24)], window: h(7, 23) },
 };
 
-export const cat = (key) => CATEGORIES[key] || CATEGORIES.other;
+export const cat = (key) => (Object.hasOwn(CATEGORIES, key) ? CATEGORIES[key] : CATEGORIES.other);
 
 // 식당 메뉴 구분. osm: OSM cuisine 태그 값 중 이 메뉴로 볼 것들
 export const CUISINES = {

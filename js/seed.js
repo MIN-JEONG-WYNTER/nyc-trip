@@ -1,4 +1,5 @@
 import { GOOGLE_HOURS, REQUESTED_PLACES } from "./google-data.js";
+import { CATEGORIES, CUISINES } from "./categories.js";
 
 // 처음 열었을 때(공유 데이터가 아직 없을 때) 쓰는 초기 데이터 — 기존 고정 일정의 장소들
 const T0 = 1760000000000;
@@ -238,7 +239,100 @@ function normalizeTrip(trip) {
   if (m.requests) m.requests = m.requests.filter((r) => isObj(r) && r.id != null);
   if (trip.schedule === undefined || (trip.schedule !== null && !isObj(trip.schedule))) trip.schedule = null;
   for (const p of trip.places) if (p.branches != null && !Array.isArray(p.branches)) delete p.branches;
+  // 장소 한 곳 한 곳 형식 검사 — 조작된 공유 데이터가 화면을 깨뜨리지 않게 (못 고치는 건 버린다)
+  const str = (v, max = 2000) => (v == null ? null : String(v).slice(0, max));
+  const okLoc = (o) => isObj(o) && Number.isFinite(+o.lat) && Number.isFinite(+o.lon) && Math.abs(+o.lat) <= 90 && Math.abs(+o.lon) <= 180;
+  trip.places = trip.places
+    .filter((p) => typeof p.name === "string" && okLoc(p) && p.id.length <= 200)
+    .slice(0, 1000);
+  for (const p of trip.places) {
+    p.lat = +p.lat;
+    p.lon = +p.lon;
+    p.name = p.name.slice(0, 300);
+    if (!Object.hasOwn(CATEGORIES, p.category)) p.category = "other";
+    if (p.cuisine != null && !Object.hasOwn(CUISINES, p.cuisine)) p.cuisine = "other";
+    for (const k of ["note", "addr", "hours", "website", "mealPref", "before", "hoursSource"]) if (p[k] != null) p[k] = str(p[k]);
+    if (!Number.isFinite(+p.duration) || +p.duration <= 0) p.duration = 60;
+    p.duration = Math.min(600, Math.round(+p.duration));
+    if (!Array.isArray(p.slots)) p.slots = [];
+    p.slots = p.slots.filter((x) => isObj(x) && typeof x.time === "string").map((x) => ({ day: Number.isInteger(x.day) ? x.day : null, time: x.time.slice(0, 5) }));
+    if (!isObj(p.pin)) p.pin = { day: null, time: null };
+    else p.pin = { day: Number.isInteger(p.pin.day) ? p.pin.day : null, time: typeof p.pin.time === "string" ? p.pin.time.slice(0, 5) : null };
+    if (p.tags != null) p.tags = Array.isArray(p.tags) ? p.tags.filter((x) => typeof x === "string").slice(0, 20) : [];
+    if (Array.isArray(p.branches)) {
+      p.branches = p.branches.filter(okLoc).slice(0, 30);
+      for (const b of p.branches) Object.assign(b, { lat: +b.lat, lon: +b.lon, label: str(b.label, 300) || "", hours: b.hours == null ? null : str(b.hours) });
+    }
+  }
+  // 시각은 지금+10분(폰끼리 시계 차이 여유)을 넘을 수 없다 — 먼 미래 시각을 넣어 계속 이기는 데이터를 막는다
+  const cap = Date.now() + 6e5;
+  const clamp = (v) => (Number.isFinite(+v) ? Math.min(+v, cap) : 0);
+  for (const p of trip.places) {
+    p.updatedAt = clamp(p.updatedAt);
+    if (p.baseAt != null) p.baseAt = clamp(p.baseAt);
+    if (isObj(p.fu)) for (const k of Object.keys(p.fu)) p.fu[k] = clamp(p.fu[k]);
+    else delete p.fu;
+  }
+  m.updatedAt = clamp(m.updatedAt);
+  if (isObj(m.fieldsUpdatedAt)) for (const k of Object.keys(m.fieldsUpdatedAt)) m.fieldsUpdatedAt[k] = clamp(m.fieldsUpdatedAt[k]);
+  if (m.requests) for (const r of m.requests) {
+    if (r.updatedAt != null) r.updatedAt = clamp(r.updatedAt);
+    r.text = str(r.text, 500) || "";
+  }
+  if (trip.schedule) trip.schedule.generatedAt = clamp(trip.schedule.generatedAt);
   return trip;
+}
+
+// 구글 지도 대조(2026-10-09)로 바로잡은 정보 — 장소마다 한 번만, 사용자가 직접 바꾼 항목은 건드리지 않는다
+// branches: 라벨로 찾아서 { set } 또는 { remove }
+const DATA_FIX = {
+  "seed-flyingsolo": { lat: 40.72108, lon: -73.99873, addr: "419 Broome St, SoHo" },
+  "seed-dumbo": { lat: 40.70332, lon: -73.98957 },
+  "seed-911": { hours: "Mo-Su 07:30-21:00", hoursSource: "manual", note: "추모 광장은 매일 열어요 (실내 박물관은 화요일 휴관)" },
+  "g-roome": { category: "shop", note: "" },
+  "g-regular": { cuisine: "brunch" },
+  "n-artistsfleas": { deleted: true, selected: false }, // 폐업
+  "n-housingworks": { deleted: true, selected: false }, // 폐업
+  "n-skims": { selected: false, note: "구글 지도에 ‘임시 휴업’으로 나와요 (10/9 확인)" },
+  "seed-benjamin": { branches: [["Benjamin Steakhouse · 52 E 41st St (Dylan Hotel)", { set: { label: "Benjamin Steakhouse · 52 E 41st St (Chemists' Club Hotel)" } }]] },
+  "g-magnolia": { branches: [["Upper West Side", { set: { label: "Upper West Side · 200 Columbus Ave", hours: "Mo-Th 08:00-22:00; Fr-Sa 08:00-23:00; Su 08:00-22:00" } }]] },
+  "n-victorias-secret": {
+    branches: [
+      ["593 Broadway, Manhattan", { remove: true }], // 폐업
+      ["Fort Greene Place, Brooklyn", { set: { label: "Atlantic Terminal Mall · 139 Flatbush Ave, Brooklyn" } }],
+      ["100 West 33rd Street, Manhattan", { set: { label: "435 7th Ave, Manhattan", lat: 40.75063, lon: -73.9904 } }],
+      ["54 The Promenade, Edgewater", { remove: true }], // 뉴저지
+    ],
+  },
+  "n-lululemon": {
+    branches: [
+      ["426 West 14th Street, Manhattan", { set: { label: "408 West 14th Street, Manhattan", lat: 40.74087, lon: -74.006 } }],
+      ["313 Washington Street, Downtown", { remove: true }], // 뉴저지 호보컨
+      ["129 North 6th Street, Brooklyn", { set: { label: "97 North 6th Street, Brooklyn", lat: 40.7186, lon: -73.96001 } }],
+    ],
+  },
+  "n-alo": { branches: [["Bedford Avenue, Brooklyn", { set: { label: "241 Bedford Avenue, Brooklyn" } }]] },
+  "n-sephora": { branches: [["Mall Drive West, Journal Square", { remove: true }]] }, // 뉴저지
+  "n-reformation": { branches: [["23 Howard Street, Manhattan", { remove: true }]] }, // 없는 매장
+};
+
+function applyDataFix(p) {
+  const fix = DATA_FIX[p.id];
+  if (!fix || p.dataFix >= 2) return;
+  p.dataFix = 2;
+  const userSet = (k) => p.fu?.[k] != null && p.fu[k] > (p.baseAt ?? 0); // 앱에서 직접 바꾼 항목
+  for (const [k, v] of Object.entries(fix)) {
+    if (k === "branches" || userSet(k)) continue;
+    p[k] = v;
+  }
+  if (fix.branches && Array.isArray(p.branches) && !userSet("branches")) {
+    for (const [label, op] of fix.branches) {
+      const i = p.branches.findIndex((b) => b.label === label);
+      if (i < 0) continue;
+      if (op.remove) p.branches.splice(i, 1);
+      else Object.assign(p.branches[i], op.set, op.set.hours ? { googleHours: 1 } : {});
+    }
+  }
 }
 
 // 예전 형식의 데이터를 지금 형식으로 맞춘다 (모든 폰에서 같은 결과가 나오도록 결정적으로)
@@ -281,6 +375,7 @@ export function migrateTrip(trip) {
           dup.updatedAt = mine.updatedAt;
         }
         Object.assign(mine, { deleted: true, selected: false, updatedAt: Math.max(mine.updatedAt || 0, dup.updatedAt || 0) + 1 });
+        if (mine.fu) Object.assign(mine.fu, { deleted: mine.updatedAt, selected: mine.updatedAt });
       }
       continue;
     }
@@ -307,6 +402,7 @@ export function migrateTrip(trip) {
   }
   const seedCuisine = { "seed-keens": "steak", "seed-lindustrie": "pizza", "seed-bark": "barbecue" };
   for (const p of trip.places) if (seedCuisine[p.id] && !p.cuisine) p.cuisine = seedCuisine[p.id];
+  for (const p of trip.places) applyDataFix(p);
   sanitizeSchedule(trip);
   return trip;
 }
@@ -326,7 +422,18 @@ function sanitizeSchedule(trip) {
     for (const it of d.items) if (it.branch != null) it.branch = n(it.branch);
     d.back = { travel: n(d.back?.travel), mode: typeof d.back?.mode === "string" ? d.back.mode : "none" };
   }
-  if (!Array.isArray(sch.unscheduled)) sch.unscheduled = [];
+  for (const d of sch.days) {
+    d.missingMeals = Array.isArray(d.missingMeals) ? d.missingMeals.filter((x) => typeof x === "string") : [];
+    d.districts = Array.isArray(d.districts) ? d.districts.filter((x) => typeof x === "string") : [];
+  }
+  sch.unscheduled = Array.isArray(sch.unscheduled) ? sch.unscheduled.filter((u) => u && typeof u.id === "string").map((u) => ({ id: u.id, reason: String(u.reason ?? "") })) : [];
+  sch.unmet = Array.isArray(sch.unmet) ? sch.unmet.map(String) : [];
+  const sg = sch.suggest && typeof sch.suggest === "object" ? sch.suggest : {};
+  const okItem = (x) => x && typeof x.id === "string" && Number.isFinite(+x.day);
+  sch.suggest = {
+    remove: Array.isArray(sg.remove) ? sg.remove.filter(okItem).map((x) => ({ id: x.id, day: +x.day, save: n(x.save) })) : [],
+    add: Array.isArray(sg.add) ? sg.add.filter(okItem).map((x) => ({ id: x.id, day: +x.day, extra: n(x.extra) })) : [],
+  };
   if (sch.stats) for (const k of Object.keys(sch.stats)) sch.stats[k] = n(sch.stats[k]);
 }
 
