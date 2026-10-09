@@ -62,7 +62,11 @@ function parseTimes(str) {
 // 반환값: 요일(0=월 … 6=일)마다 [열기, 닫기] 분 단위 구간 배열, 또는 null
 export function parseHours(raw) {
   if (!raw || typeof raw !== "string") return null;
-  const text = raw.replace(/"[^"]*"/g, "").replace(/\|\|/g, ";").trim();
+  const text = raw
+    .replace(/"[^"]*"/g, "")
+    .replace(/\|\|/g, ";")
+    .replace(/(\d)\s*,\s*(?=(?:Mo|Tu|We|Th|Fr|Sa|Su)\b)/g, "$1;") // "Mo-Sa 09:00-18:00, Su 12:00-19:00"
+    .trim();
   if (!text) return null;
   const week = Array.from({ length: 7 }, () => null);
   let applied = false;

@@ -68,3 +68,49 @@ export async function lookupHours(place) {
     website: tags?.website || tags?.["contact:website"] || null,
   };
 }
+
+// ---------- 분점 ----------
+// 상호 비교용 키: 소문자, 기호 제거, 흔한 업종 단어 제거 ("L’industrie Pizza" = "L'Industrie Pizzeria")
+const GENERIC = new Set(["the", "pizza", "pizzeria", "restaurant", "steakhouse", "steak", "house", "bar", "grill", "cafe", "coffee", "nyc", "no", "co", "kitchen"]);
+export function brandKey(name) {
+  return String(name || "")
+    .split(/[·(]/)[0]
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[’'`.]/g, "")
+    .replace(/([a-z])(\d)/g, "$1 $2") // "No.1" = "No. 1"
+    .split(/[^a-z0-9]+/)
+    .filter((w) => w && !GENERIC.has(w))
+    .join("");
+}
+
+const MAX_BRANCHES = 12;
+
+// 같은 상호의 다른 지점들을 찾는다 (본점과 100m 이상 떨어진 곳, 호텔에서 가까운 순으로 최대 12곳)
+export async function findBranches(place, center) {
+  const key = brandKey(place.name);
+  if (!key) return [];
+  const q = place.name.split(/[·(]/)[0].trim();
+  const res = await fetch(`${PHOTON}/api/?q=${encodeURIComponent(q)}&limit=50&bbox=${NYC_BBOX}`);
+  if (!res.ok) throw new Error(`분점 검색 실패 (${res.status})`);
+  const data = await res.json();
+  const picked = [];
+  for (const r of data.features.map(toResult)) {
+    if (brandKey(r.name) !== key || !r.osm) continue;
+    if (place.osm && r.osm.type === place.osm.type && r.osm.id === place.osm.id) continue;
+    if (distanceKm(r, place) < 0.1 || picked.some((b) => distanceKm(b, r) < 0.1)) continue;
+    picked.push({ label: r.addr || r.name, lat: r.lat, lon: r.lon, osm: r.osm, hours: null });
+  }
+  return picked.sort((a, b) => distanceKm(a, center) - distanceKm(b, center)).slice(0, MAX_BRANCHES);
+}
+
+// 분점마다 OSM 영업시간을 채운다 (무료 API라 천천히)
+export async function fillBranchHours(branches) {
+  const out = [];
+  for (const b of branches) {
+    const tags = await fetchOsmTags(b.osm).catch(() => null);
+    out.push({ ...b, hours: tags?.opening_hours || null });
+    await new Promise((r) => setTimeout(r, 250));
+  }
+  return out;
+}

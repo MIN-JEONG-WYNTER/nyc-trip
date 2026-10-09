@@ -2,7 +2,8 @@ import { Store, REPO, mergeTrips } from "./store.js";
 import { CATEGORIES, CUISINES, MEAL_SLOTS, cat, kindOf } from "./categories.js";
 import { parseHours, describeHours, fmtMin, toMin, weekdayOf } from "./hours.js";
 import { generateSchedule, inputsKey, tripDate } from "./optimizer.js";
-import { searchPlaces, reverseGeocode, lookupHours } from "./search.js";
+import { parseRequest, describeRule, applyRequests } from "./requests.js";
+import { searchPlaces, reverseGeocode, lookupHours, findBranches, fillBranchHours } from "./search.js";
 
 const store = new Store();
 const $ = (sel) => document.querySelector(sel);
@@ -26,6 +27,15 @@ function toast(msg, ms = 2200) {
   toast.t = setTimeout(() => (el.hidden = true), ms);
 }
 
+const fmtDur = (min) => (min >= 60 ? `${Math.floor(min / 60)}시간${min % 60 ? ` ${min % 60}분` : ""}` : `${min}분`);
+// 하루 이동 합계 (도보·지하철 따로)
+function dayTravel(day) {
+  const legs = [...day.items.map((it) => ({ min: it.travel, mode: it.mode })), { min: day.back?.travel || 0, mode: day.back?.mode }];
+  const sum = (m) => legs.filter((l) => l.mode === m).reduce((a, l) => a + (l.min || 0), 0);
+  return { walk: sum("walk"), subway: sum("subway"), total: legs.reduce((a, l) => a + (l.min || 0), 0) };
+}
+const travelText = (t) => `${fmtDur(t.total)}${t.total ? ` (🚶 ${fmtDur(t.walk)} · 🚇 ${fmtDur(t.subway)})` : ""}`;
+
 const dayLabel = (d) => {
   const date = tripDate(trip().meta, d);
   return `${date.getMonth() + 1}/${date.getDate()} · ${WEEK_EN[weekdayOf(date)]}`;
@@ -46,13 +56,29 @@ function nycNow() {
 function hoursInfo(p) {
   if ((p.slots || []).length) return { label: "정해진 시각에만", text: p.slots.map((x) => x.time).join(", "), ok: true };
   const week = parseHours(p.hours);
-  if (week) return { label: p.hoursSource === "osm" ? "영업시간 OSM" : "영업시간 직접 입력", text: describeHours(week), ok: true };
+  if (week) return { label: { osm: "영업시간 OSM", google: "영업시간 구글" }[p.hoursSource] || "영업시간 직접 입력", text: describeHours(week), ok: true };
   if (p.hours) return { label: "영업시간 해석 불가 → 기본값", text: p.hours, ok: false };
   const def = cat(p.category).hours.map(([o, c]) => `${fmtMin(o)}–${fmtMin(c)}`).join(", ");
   return { label: "영업시간 정보 없음 → 기본값", text: `기본값 ${def}`, ok: false };
 }
 
-const gmapsUrl = (p) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${p.name} ${p.lat},${p.lon}`)}`;
+// 일정 항목이 실제로 가는 지점 (분점이 골라졌으면 그 분점)
+const locOf = (p, it) => {
+  const b = it?.branch ? p.branches?.[it.branch - 1] : null;
+  return b ? { lat: b.lat, lon: b.lon, label: b.label } : { lat: p.lat, lon: p.lon, label: p.addr || "" };
+};
+const gmapsUrl = (p, loc = p) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${p.name.split(/[·(]/)[0].trim()} ${loc.lat},${loc.lon}`)}`;
+// 체인일 수 있는 종류 — 추가할 때 분점을 같이 찾는다
+const BRANCHY = new Set(["restaurant", "cafe", "bar", "shop"]);
+
+async function attachBranches(id) {
+  const p = placeById(id);
+  const found = await findBranches(p, trip().meta.hotel).catch(() => null);
+  if (!found) return null;
+  const branches = found.length ? await fillBranchHours(found) : [];
+  store.updatePlace(id, { branches, branchesCheckedAt: Date.now() });
+  return branches.length;
+}
 
 // ---------------- 지도 ----------------
 const tiles = () => L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap contributors" });
@@ -102,6 +128,7 @@ function setView(view) {
 // ---------------- 일정 ----------------
 function renderPlan() {
   const t = trip();
+  renderRequests();
   const sch = t.schedule;
   const nDays = t.meta.days.length;
   const now = nycNow();
@@ -122,10 +149,10 @@ function renderPlan() {
     return;
   }
 
-  const st = sch.stats || {};
   const by = sch.by ? ` · ${esc(sch.by)}` : "";
   const when = new Date(sch.generatedAt).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
-  $("#planStats").innerHTML = `총 이동 약 ${Math.floor(st.travel / 60)}시간 ${st.travel % 60}분<br>${when} 생성${by}`;
+  const all = sch.days.map(dayTravel).reduce((a, x) => ({ walk: a.walk + x.walk, subway: a.subway + x.subway, total: a.total + x.total }), { walk: 0, subway: 0, total: 0 });
+  $("#planStats").innerHTML = `<b>전체 이동 ${travelText(all)}</b><br>${when} 생성${by}`;
 
   const d = ui.day;
   const day = sch.days[d] || { items: [], back: { travel: 0 } };
@@ -133,6 +160,7 @@ function renderPlan() {
   const names = day.items.map((it) => placeById(it.id)?.name).filter(Boolean);
   const missing = (day.missingMeals || []).map((m) => MEAL_SLOTS[m].label);
   $("#dayHead").innerHTML = `<h2>DAY ${d + 1} · ${esc(dayLabel(d))}</h2><p>${names.length ? esc(names.slice(0, 3).join(" → ")) + (names.length > 3 ? " …" : "") : "아직 배정된 곳이 없어요"}</p>
+    ${day.items.length ? `<span class="pill">🧭 이날 이동 ${travelText(dayTravel(day))}</span>` : ""}
     ${missing.length ? `<span class="pill warn">⚠️ ${missing.join("·")} 먹을 시간이 없어요</span>` : ""}`;
 
   const rows = [];
@@ -170,6 +198,7 @@ function renderPlan() {
         <div class="card">
           <div class="type">${c.icon} ${esc(c.label)}${isNow ? " · 지금" : ""}</div>
           <h3>${i + 1}. ${esc(p.name)}</h3>
+          ${p.branches?.length ? `<p>📍 ${esc(locOf(p, it).label || "기본 지점")} <small>(지점 ${p.branches.length + 1}곳 중 동선에 맞춰 선택)</small></p>` : ""}
           ${p.note ? `<p>${esc(p.note)}</p>` : ""}
           ${p.priority === "must" ? '<span class="pill must">꼭 가기</span>' : ""}
           ${pinned ? '<span class="pill pin">📌 고정</span>' : ""}
@@ -177,7 +206,7 @@ function renderPlan() {
           <div class="card-actions">
             <button data-act="pin" data-id="${esc(p.id)}" data-start="${it.start}">${pinned ? "고정 해제" : "📌 이 시간 고정"}</button>
             <button data-act="edit" data-id="${esc(p.id)}">편집</button>
-            <a href="${esc(gmapsUrl(p))}" target="_blank" rel="noopener">구글 지도</a>
+            <a href="${esc(gmapsUrl(p, locOf(p, it)))}" target="_blank" rel="noopener">구글 지도</a>
           </div>
         </div>
       </div>`);
@@ -232,8 +261,9 @@ function drawPlanMap() {
     const p = placeById(it.id);
     if (!p) return;
     const i = num++;
-    pts.push([p.lat, p.lon]);
-    L.marker([p.lat, p.lon], { icon: numIcon(i + 1) })
+    const loc = locOf(p, it);
+    pts.push([loc.lat, loc.lon]);
+    L.marker([loc.lat, loc.lon], { icon: numIcon(i + 1) })
       .bindPopup(`<b>${i + 1}. ${esc(p.name)}</b><br>${fmtMin(it.start)}–${fmtMin(it.end)}`)
       .addTo(planLayer);
   });
@@ -250,9 +280,44 @@ $("#dayTabs").addEventListener("click", (e) => {
   drawPlanMap();
 });
 
-$("#generateBtn").addEventListener("click", () => {
+function renderRequests() {
+  const reqs = trip().meta.requests || [];
+  $("#requestList").innerHTML = reqs
+    .map((r) => {
+      const rules = parseRequest(r.text, trip());
+      const how = rules.length
+        ? `<small>${rules.map((x) => esc(describeRule(x, trip()))).join("<br>")}</small>`
+        : `<small class="bad">이해하지 못했어요. 날짜·동네·종류·장소 이름을 넣어 다시 적어주세요.</small>`;
+      return `<div class="req"><div class="body">“${esc(r.text)}”${how}</div><button data-delreq="${esc(r.id)}" aria-label="요청 삭제">✕</button></div>`;
+    })
+    .join("");
+}
+
+$("#requestForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const text = $("#requestInput").value.trim();
+  if (!text) return;
+  if (!parseRequest(text, trip()).length) return toast("이해하지 못했어요 · 예: ‘둘째날 오후는 첼시에서 빈티지 쇼핑’", 3500);
+  store.update((t) => {
+    t.meta = { ...t.meta, requests: [...(t.meta.requests || []), { id: newId(), text, by: store.user }], updatedAt: Date.now() };
+  });
+  $("#requestInput").value = "";
+  runGenerate();
+});
+$("#requestList").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-delreq]");
+  if (!b) return;
+  store.update((t) => {
+    t.meta = { ...t.meta, requests: (t.meta.requests || []).filter((r) => r.id !== b.dataset.delreq), updatedAt: Date.now() };
+  });
+  runGenerate();
+});
+
+$("#generateBtn").addEventListener("click", () => runGenerate());
+
+function runGenerate() {
   const selected = livePlaces().filter((p) => p.selected);
-  if (!selected.length) {
+  if (!selected.length && !(trip().meta.requests || []).length) {
     toast("‘장소’ 탭에서 갈 곳을 먼저 골라주세요");
     return;
   }
@@ -260,13 +325,15 @@ $("#generateBtn").addEventListener("click", () => {
   btn.disabled = true;
   btn.textContent = "⏳ 계산 중…";
   setTimeout(() => {
-    const sch = generateSchedule(trip(), { timeBudgetMs: 900 });
+    const { trip: input, wishes } = applyRequests(trip(), trip().meta.requests);
+    const sch = generateSchedule(input, { timeBudgetMs: 1200, wishes });
+    sch.inputsKey = inputsKey(trip());
     store.update((t) => (t.schedule = { ...sch, by: store.user }));
     btn.disabled = false;
     toast(sch.unscheduled.length ? `일정을 만들었어요 · ${sch.unscheduled.length}곳은 못 넣었어요` : "일정을 만들었어요 ✨");
     drawPlanMap();
   }, 30);
-});
+}
 
 document.addEventListener("click", (e) => {
   const b = e.target.closest("[data-act]");
@@ -303,7 +370,7 @@ function renderPlaces() {
           .map((p) => {
             const hi = hoursInfo(p);
             const pinned = p.pin && (p.pin.day != null || p.pin.time);
-            const extra = [p.priority === "must" ? "꼭 가기" : "", p.category === "restaurant" && MEAL_PREF[p.mealPref] ? MEAL_PREF[p.mealPref] : "", pinned ? "📌 고정" : "", (p.slots || []).length ? `🎫 ${p.slots.length}개 시각` : ""].filter(Boolean).join(" · ");
+            const extra = [p.priority === "must" ? "꼭 가기" : "", p.category === "restaurant" && MEAL_PREF[p.mealPref] ? MEAL_PREF[p.mealPref] : "", pinned ? "📌 고정" : "", (p.slots || []).length ? `🎫 ${p.slots.length}개 시각` : "", p.branches?.length ? `지점 ${p.branches.length + 1}곳` : ""].filter(Boolean).join(" · ");
             return `<div class="place ${p.selected ? "" : "off"}">
               <button class="check ${p.selected ? "on" : ""}" data-toggle="${esc(p.id)}" aria-label="갈 곳으로 선택">${p.selected ? "✓" : ""}</button>
               <div class="info" data-open="${esc(p.id)}"><b>${esc(p.name)}</b><span>${p.duration}분 · ${esc(hi.label)}${extra ? ` · ${esc(extra)}` : ""}</span></div>
@@ -321,6 +388,10 @@ function drawPlacesMap(fit = false) {
   const pts = [];
   for (const p of livePlaces()) {
     pts.push([p.lat, p.lon]);
+    for (const b of p.branches || [])
+      L.circleMarker([b.lat, b.lon], { radius: 5, weight: 2, color: p.selected ? "#111" : "#aaa", fillColor: "#fff", fillOpacity: 1 })
+        .bindTooltip(`${esc(p.name)} 분점`)
+        .addTo(placesLayer);
     L.circleMarker([p.lat, p.lon], { radius: 8, weight: 2, color: "#fff", fillColor: p.selected ? "#111" : "#aaa", fillOpacity: 1 })
       .bindTooltip(esc(p.name))
       .on("click", () => !ui.picking && openSheet(p))
@@ -408,7 +479,7 @@ $("#searchResults").addEventListener("click", async (e) => {
   e.stopPropagation();
   const r = lastResults[+b.dataset.add];
   const id = newId();
-  store.addPlace(blankPlace({ id, name: r.name, lat: r.lat, lon: r.lon, category: r.category, osm: r.osm, note: r.addr }));
+  store.addPlace(blankPlace({ id, name: r.name, lat: r.lat, lon: r.lon, category: r.category, osm: r.osm, addr: r.addr }));
   renderResults();
   toast(`‘${r.name}’ 추가 · 영업시간 찾는 중…`);
   const found = await lookupHours(placeById(id)).catch(() => null);
@@ -418,6 +489,10 @@ $("#searchResults").addEventListener("click", async (e) => {
     toast(`‘${r.name}’ 영업시간을 OSM에서 가져왔어요`);
   } else {
     toast(`‘${r.name}’ 영업시간 정보가 없어 기본값을 써요 (편집에서 입력 가능)`, 3200);
+  }
+  if (BRANCHY.has(r.category)) {
+    const n = await attachBranches(id);
+    if (n) toast(`‘${r.name}’ 분점 ${n}곳도 찾았어요 · 일정 만들 때 동선에 맞는 곳으로 골라요`, 3500);
   }
 });
 
@@ -446,10 +521,11 @@ function blankPlace(fields) {
 $("#addManualBtn").addEventListener("click", () => openSheet(blankPlace({}), true));
 
 $("#lookupAllBtn").addEventListener("click", async (e) => {
-  const targets = livePlaces().filter((p) => !p.hours || (p.category === "restaurant" && !p.cuisine));
-  if (!targets.length) return toast("모든 장소에 영업시간(식당은 메뉴까지)이 있어요");
+  const targets = livePlaces().filter((p) => !p.hours || (p.category === "restaurant" && !p.cuisine) || (BRANCHY.has(p.category) && !p.branchesCheckedAt));
+  if (!targets.length) return toast("더 찾을 정보가 없어요");
   e.target.disabled = true;
   let found = 0;
+  let branches = 0;
   for (const [i, p] of targets.entries()) {
     e.target.textContent = `🕐 찾는 중… ${i + 1}/${targets.length}`;
     const r = await lookupHours(p).catch(() => null);
@@ -458,11 +534,12 @@ $("#lookupAllBtn").addEventListener("click", async (e) => {
       found++;
       store.updatePlace(p.id, { hours: r.hours, hoursSource: "osm", osm: r.osm });
     } else if (r?.osm && !p.osm) store.updatePlace(p.id, { osm: r.osm });
+    if (BRANCHY.has(p.category) && !p.branchesCheckedAt) branches += (await attachBranches(p.id)) || 0;
     await new Promise((res) => setTimeout(res, 400)); // 무료 API 예의상 천천히
   }
   e.target.disabled = false;
-  e.target.textContent = "🕐 빈 영업시간 OSM에서 찾기";
-  toast(`${targets.length}곳 중 ${found}곳의 영업시간을 찾았어요`, 3000);
+  e.target.textContent = "🔎 영업시간·메뉴·분점 찾기";
+  toast(`영업시간 ${found}곳 · 분점 ${branches}곳을 찾았어요`, 3000);
 });
 
 // 지도에서 위치 고르기
@@ -528,6 +605,10 @@ function openSheet(place, isNew = false, keepDraft = false) {
     <div class="field"><label for="f-hours">영업시간 (OSM 형식)</label>
       <div class="inline"><input type="text" id="f-hours" value="${esc(p.hours || "")}" placeholder="예: Mo-Fr 11:00-22:00; Sa,Su 10:00-23:00"><button type="button" class="small-btn" id="f-lookup">OSM 찾기</button></div>
       <div class="hint" id="f-hours-hint"></div></div>
+    <div class="field" id="f-branch-wrap" ${BRANCHY.has(p.category) || p.branches?.length ? "" : "hidden"}><div class="label">지점</div>
+      <div id="f-branches"></div>
+      <button type="button" class="small-btn" id="f-findbranch">🔎 같은 이름 분점 찾기</button>
+      <div class="hint">지점이 여러 곳이면 일정 만들 때 앞뒤 동선에 가장 맞는 지점으로 자동 선택돼요.</div></div>
     <div class="field"><div class="label">위치</div>
       <div class="inline"><span class="hint">📍 ${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}</span><button type="button" class="small-btn" id="f-pick">지도에서 바꾸기</button></div></div>
     <div class="field"><label for="f-note">메모</label><textarea id="f-note">${esc(p.note || "")}</textarea></div>
@@ -555,6 +636,40 @@ function openSheet(place, isNew = false, keepDraft = false) {
     </div>
   </form>`;
 
+  const renderBranches = () => {
+    const bs = ui.draft.place.branches || [];
+    $("#f-branches").innerHTML = bs.length
+      ? `<div class="hint">본점: ${esc(ui.draft.place.addr || "현재 위치")}</div>` +
+        bs
+          .map(
+            (b, i) => `<div class="slot-row"><span class="hint" style="flex:1">${esc(b.label)} · ${b.hours ? "영업시간 OSM" : "영업시간은 본점과 같게"}</span>
+              <button type="button" class="small-btn" data-delbranch="${i}">✕</button></div>`,
+          )
+          .join("")
+      : `<div class="hint">${ui.draft.place.branchesCheckedAt ? "찾아본 분점이 없어요." : "아직 분점을 찾아보지 않았어요."}</div>`;
+  };
+  renderBranches();
+  $("#f-branches").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-delbranch]");
+    if (!b) return;
+    ui.draft.place.branches = ui.draft.place.branches.filter((_, i) => i !== +b.dataset.delbranch);
+    renderBranches();
+  });
+  $("#f-findbranch").addEventListener("click", async (e) => {
+    readForm();
+    e.target.disabled = true;
+    e.target.textContent = "찾는 중…";
+    const found = await findBranches(ui.draft.place, trip().meta.hotel).catch(() => null);
+    const branches = found ? await fillBranchHours(found) : null;
+    e.target.disabled = false;
+    e.target.textContent = "🔎 같은 이름 분점 찾기";
+    if (!branches) return toast("분점 검색에 실패했어요");
+    ui.draft.place.branches = branches;
+    ui.draft.place.branchesCheckedAt = Date.now();
+    renderBranches();
+    toast(branches.length ? `분점 ${branches.length}곳을 찾았어요 (저장을 눌러야 반영돼요)` : "같은 이름의 분점이 없어요");
+  });
+
   const hint = () => {
     const raw = $("#f-hours").value.trim();
     const el = $("#f-hours-hint");
@@ -573,6 +688,7 @@ function openSheet(place, isNew = false, keepDraft = false) {
   $("#f-cat").addEventListener("change", (e) => {
     $("#f-dur").value = cat(e.target.value).dur;
     $("#f-meal-wrap").hidden = e.target.value !== "restaurant";
+    $("#f-branch-wrap").hidden = !BRANCHY.has(e.target.value) && !(ui.draft.place.branches || []).length;
     hint();
   });
   $("#f-cancel").addEventListener("click", () => $("#sheet").close());

@@ -2,13 +2,18 @@
 // 하루는 호텔에서 출발해 호텔로 돌아오며, 고정 일정은 체크인(첫날 시작)·체크아웃(마지막 날 끝)뿐이다.
 // 방식: 제약이 많은 곳부터 비용이 가장 적게 늘어나는 자리에 끼워 넣은 뒤,
 //       일부를 빼고 다시 넣는(ruin & recreate) 과정을 반복하며 개선한다.
+// 분점: 장소에 분점이 있으면 일정마다 앞뒤 동선에 가장 맞는 지점을 고른다.
 // 끼니: 하루 시간이 점심·저녁 시간대를 포함하면 그 끼니를 기대한다. 고른 식당이 없으면
 //       "자유 식사" 자리(위치 없음)를 비워두고, 그마저 못 넣으면 비용을 크게 매긴다.
 import { parseHours, toMin, weekdayOf } from "./hours.js";
 import { cat, MEAL_WINDOWS, MEAL_SLOTS } from "./categories.js";
 import { travel } from "./geo.js";
 
-const UNSCHEDULED_PENALTY = { must: 5000, want: 1000 };
+const UNSCHEDULED_PENALTY = { must: 5000, want: 1000, extra: 150 }; // extra: 문장 요청 때문에 후보로 들어온 곳
+const WISH_REWARD = 90; // 요청에 맞는 곳 하나를 그날 넣을 때마다 (하루 8곳까지)
+const WISH_MISS = 700; // 날짜를 정한 요청이 그날 하나도 안 지켜지면
+const WISH_MISS_MUST = 3000;
+const AVOID_COST = 400; // "그날은 쇼핑 빼줘" 같은 요청을 어긴 곳마다
 const WAIT_WEIGHT = 0.25;
 const BALANCE_WEIGHT = 0.3;
 const FREE_MEAL_COST = 150; // 식당 대신 자유 식사로 채운 끼니
@@ -76,15 +81,28 @@ function mealOf(p, start) {
   return start < MEAL_WINDOWS.dinner[0] ? "lunch" : "dinner";
 }
 
-export function createSolver(trip) {
+// wishes: requests.js의 applyRequests가 만든 요청 조건 ({ day, ids, win, accept(id, branch), type, must })
+export function createSolver(trip, wishes = []) {
   const meta = trip.meta;
   const hotel = { lat: meta.hotel.lat, lon: meta.hotel.lon };
   const places = trip.places.filter((p) => p.selected && !p.deleted);
   const P = Object.fromEntries(places.map((p) => [p.id, p]));
   const nDays = meta.days.length;
 
-  const ranges = {};
-  for (const p of places) ranges[p.id] = Array.from({ length: nDays }, (_, d) => startRanges(p, d, meta));
+  // 지점 목록: [본점(장소 자체), ...분점]. 분점 영업시간이 없으면 본점 영업시간을 쓴다
+  const locs = {};
+  const ranges = {}; // 지점 중 하나라도 가능한 시작 구간 (날짜 배정·제약 판단용)
+  for (const p of places) {
+    const list = [{ lat: p.lat, lon: p.lon, hours: p.hours }, ...(p.branches || []).map((b) => ({ lat: b.lat, lon: b.lon, hours: b.hours || p.hours }))];
+    locs[p.id] = list.map((l, bi) => ({
+      id: `${p.id}#${bi}`,
+      bi,
+      lat: l.lat,
+      lon: l.lon,
+      ranges: Array.from({ length: nDays }, (_, d) => startRanges({ ...p, hours: l.hours }, d, meta)),
+    }));
+    ranges[p.id] = Array.from({ length: nDays }, (_, d) => locs[p.id].flatMap((l) => l.ranges[d]).sort((a, b) => a[0] - b[0]));
+  }
 
   // 날짜별로 기대하는 끼니와, 그 끼니의 자유 식사 자리(가상의 장소)
   const expectedMeals = meta.days.map((day, d) =>
@@ -130,20 +148,45 @@ export function createSolver(trip) {
       const p = P[seq[i]];
       if (p.before && seq.indexOf(p.before) > -1 && seq.indexOf(p.before) < i) return null;
       // 자유 식사는 위치가 없으므로 직전 장소 근처에서 먹는 것으로 본다
-      const leg = p.freeMeal ? { min: 0, mode: "none" } : tr(prev, p);
-      const arrive = t + leg.min;
+      let cands = [null];
+      if (!p.freeMeal) {
+        cands = locs[p.id];
+        if (cands.length > 1) {
+          // 분점: 직전 위치 → 지점 → 다음 장소까지 이동이 짧은 순서로 시도
+          let next = hotel;
+          for (let j = i + 1; j < seq.length; j++) {
+            if (!P[seq[j]].freeMeal) {
+              next = locs[seq[j]][0];
+              break;
+            }
+          }
+          const via = (l) => tr(prev, l).min + tr(l, next).min;
+          cands = [...cands].sort((a, b) => via(a) - via(b));
+        }
+      }
       let start = null;
       let meal = null;
-      for (const [lo, hi] of ranges[p.id][d]) {
-        if (hi < arrive) continue;
-        const s = Math.max(lo, arrive);
-        const m = mealOf(p, s);
-        if (m && meals.has(m)) continue; // 점심이 이미 있으면 저녁 시간대로 넘긴다
-        start = s;
-        meal = m;
-        break;
+      let leg = null;
+      let loc = null;
+      for (const c of cands) {
+        leg = c ? tr(prev, c) : { min: 0, mode: "none" };
+        const arrive = t + leg.min;
+        for (const [lo, hi] of c ? c.ranges[d] : ranges[p.id][d]) {
+          if (hi < arrive) continue;
+          const s = Math.max(lo, arrive);
+          const m = mealOf(p, s);
+          if (m && meals.has(m)) continue; // 점심이 이미 있으면 저녁 시간대로 넘긴다
+          start = s;
+          meal = m;
+          break;
+        }
+        if (start != null) {
+          loc = c;
+          break;
+        }
       }
       if (start == null) return null;
+      const arrive = t + leg.min;
       if (meal) {
         meals.add(meal);
         const ideal = MEAL_IDEAL[meal];
@@ -151,11 +194,20 @@ export function createSolver(trip) {
       }
       // 첫 장소 전 대기는 호텔에서 늦게 출발하면 되므로 대기로 치지 않는다
       const wait = i === 0 ? 0 : start - arrive;
-      items.push({ id: p.id, start, end: start + p.duration, travel: leg.min, mode: leg.mode, wait, ...(p.freeMeal ? { freeMeal: p.freeMeal } : {}) });
+      items.push({
+        id: p.id,
+        start,
+        end: start + p.duration,
+        travel: leg.min,
+        mode: leg.mode,
+        wait,
+        ...(p.freeMeal ? { freeMeal: p.freeMeal } : {}),
+        ...(loc && loc.bi ? { branch: loc.bi } : {}),
+      });
       travelSum += leg.min;
       waitSum += wait;
       t = start + p.duration;
-      if (!p.freeMeal) prev = p;
+      if (loc) prev = loc;
     }
     const back = seq.length ? tr(prev, hotel) : { min: 0, mode: "none" };
     const dayEnd = toMin(day.end);
@@ -167,8 +219,18 @@ export function createSolver(trip) {
     // 오전을 쓸 수 있는 날인데 첫 일정이 늦게 시작하면 비용
     const lateStart = items.length && toMin(day.start) <= LATE_START_AFTER ? Math.max(0, items[0].start - LATE_START_AFTER) : 0;
     const missingMeals = expectedMeals[d].filter((m) => !meals.has(m)).length;
+    let wishCost = 0;
+    for (const w of wishes) {
+      if (w.day != null && w.day !== d) continue;
+      const hits = items.filter((it) => w.ids.has(it.id) && (!w.win || (it.start >= w.win[0] && it.start < w.win[1])) && (!w.accept || w.accept(it.id, it.branch || 0))).length;
+      if (w.type === "avoid") wishCost += AVOID_COST * hits;
+      else {
+        wishCost -= WISH_REWARD * Math.min(hits, 8);
+        if (w.day != null && !hits) wishCost += w.must ? WISH_MISS_MUST : WISH_MISS;
+      }
+    }
     const cost = travelSum + back.min + WAIT_WEIGHT * waitSum + balance + FREE_MEAL_COST * freeMeals + MISSING_MEAL_COST * missingMeals +
-      MEAL_OFF_WEIGHT * mealOff + LATE_START_WEIGHT * lateStart;
+      MEAL_OFF_WEIGHT * mealOff + LATE_START_WEIGHT * lateStart + wishCost;
     return { items, back, travelSum: travelSum + back.min, waitSum, cost, meals };
   }
 
@@ -307,7 +369,7 @@ export function createSolver(trip) {
 }
 
 export function generateSchedule(trip, opts = {}) {
-  const solver = createSolver(trip);
+  const solver = createSolver(trip, opts.wishes || []);
   // 한 번의 탐색은 국소 최적해에 갇히기 쉬워, 짧게 여러 번 다시 시작해 가장 좋은 결과를 쓴다
   const { timeBudgetMs = 900, restarts = 6, seed = Date.now() } = opts;
   let sol = null;
@@ -323,7 +385,7 @@ export function generateSchedule(trip, opts = {}) {
       back: { travel: ev.back.min, mode: ev.back.mode },
       missingMeals: solver.expectedMeals[d].filter((m) => !ev.meals.has(m)),
     })),
-    unscheduled: sol.unscheduled.map((id) => ({ id, reason: solver.explain(id, sol) })),
+    unscheduled: sol.unscheduled.filter((id) => solver.places[id].priority !== "extra").map((id) => ({ id, reason: solver.explain(id, sol) })),
     stats: {
       travel: sol.evals.reduce((a, e) => a + e.travelSum, 0),
       wait: sol.evals.reduce((a, e) => a + e.waitSum, 0),
@@ -338,8 +400,8 @@ export function generateSchedule(trip, opts = {}) {
 export function inputsKey(trip) {
   const ps = trip.places
     .filter((p) => p.selected && !p.deleted)
-    .map((p) => [p.id, p.lat, p.lon, p.category, p.duration, p.hours || "", p.priority, p.mealPref || "", p.before || "", JSON.stringify(p.slots || []), JSON.stringify(p.pin || {})].join("|"))
+    .map((p) => [p.id, p.lat, p.lon, p.category, p.duration, p.hours || "", p.priority, p.mealPref || "", p.before || "", JSON.stringify(p.slots || []), JSON.stringify(p.pin || {}), JSON.stringify(p.branches || [])].join("|"))
     .sort();
   const m = trip.meta;
-  return JSON.stringify([m.startDate, m.hotel.lat, m.hotel.lon, m.days, ps]);
+  return JSON.stringify([m.startDate, m.hotel.lat, m.hotel.lon, m.days, ps, (m.requests || []).map((r) => r.text)]);
 }

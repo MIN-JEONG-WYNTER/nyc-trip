@@ -36,6 +36,17 @@
         <div id="planStats" class="plan-stats"></div>
         <button id="generateBtn" class="primary">✨ 일정 자동 생성</button>
       </div>
+      <section class="section request-box">
+        <div class="card">
+          <h3>💬 이렇게 짜줘</h3>
+          <form id="requestForm" class="inline">
+            <input type="text" id="requestInput" placeholder="예: 첫째날은 소호에서 쇼핑, 둘째날 저녁은 스테이크" autocomplete="off" enterkeyhint="send">
+            <button type="submit" class="primary">반영</button>
+          </form>
+          <div id="requestList"></div>
+          <div class="hint">날짜(첫째날·10/10·토요일), 시간대(오전·점심·오후·저녁), 동네(소호·첼시·덤보·윌리엄스버그…), 종류(쇼핑·빈티지·편집샵·맛집·카페·루프탑·박물관), 메뉴(스테이크·피자·한식…), 장소 이름(모마·피터루거…)과 ‘꼭’, ‘빼줘’를 알아들어요.</div>
+        </div>
+      </section>
       <div id="staleNotice" class="notice" hidden>장소나 조건이 바뀌었어요. <b>일정 자동 생성</b>을 다시 눌러 반영하세요.</div>
       <nav class="tabs" id="dayTabs" aria-label="여행 날짜"></nav>
       <div id="dayHead" class="day-head"></div>
@@ -56,7 +67,7 @@
         </div>
         <div class="row-actions">
           <button id="addManualBtn">＋ 직접 추가</button>
-          <button id="lookupAllBtn">🕐 빈 영업시간 OSM에서 찾기</button>
+          <button id="lookupAllBtn">🔎 영업시간·메뉴·분점 찾기</button>
         </div>
         <div class="chips" id="placeFilter">
           <button class="chip active" data-filter="all">전체</button>
