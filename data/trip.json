@@ -2502,7 +2502,7 @@
   }
  ],
  "schedule": {
-  "generatedAt": 1791590245478,
+  "generatedAt": 1791590283751,
   "unmet": [
    "DAY 3 · 박물관·미술관 → 넣기"
   ],
@@ -2555,49 +2555,58 @@
       "wait": 41
      },
      {
-      "id": "seed-lindustrie",
-      "start": 1020,
-      "end": 1080,
-      "travel": 23,
-      "mode": "subway",
-      "wait": 7
+      "id": "n-victorias-secret",
+      "start": 1002,
+      "end": 1032,
+      "travel": 12,
+      "mode": "walk",
+      "wait": 0,
+      "branch": 3
      },
      {
       "id": "n-lululemon",
-      "start": 1094,
-      "end": 1124,
-      "travel": 14,
+      "start": 1037,
+      "end": 1067,
+      "travel": 5,
       "mode": "walk",
       "wait": 0,
-      "branch": 1
+      "branch": 4
      },
      {
-      "id": "n-starbucks-reserve",
-      "start": 1127,
-      "end": 1172,
-      "travel": 3,
-      "mode": "walk",
+      "id": "seed-lindustrie",
+      "start": 1089,
+      "end": 1149,
+      "travel": 22,
+      "mode": "subway",
       "wait": 0
      },
      {
       "id": "seed-westvillage",
-      "start": 1183,
-      "end": 1243,
+      "start": 1154,
+      "end": 1214,
+      "travel": 5,
+      "mode": "walk",
+      "wait": 0
+     },
+     {
+      "id": "n-starbucks-reserve",
+      "start": 1225,
+      "end": 1270,
       "travel": 11,
       "mode": "walk",
       "wait": 0
      }
     ],
     "back": {
-     "travel": 21,
+     "travel": 23,
      "mode": "subway"
     },
     "missingMeals": [
      "lunch"
     ],
     "districts": [
+     "미드타운",
      "웨스트빌리지",
-     "첼시·미트패킹",
      "어퍼웨스트"
     ]
    },
@@ -2636,66 +2645,58 @@
       "wait": 0
      },
      {
-      "id": "n-victorias-secret",
-      "start": 929,
-      "end": 959,
-      "travel": 3,
-      "mode": "walk",
-      "wait": 0
-     },
-     {
-      "id": "n-alo",
-      "start": 962,
-      "end": 992,
-      "travel": 3,
-      "mode": "walk",
-      "wait": 0
-     },
-     {
       "id": "seed-wgaca",
-      "start": 995,
-      "end": 1035,
-      "travel": 3,
+      "start": 933,
+      "end": 973,
+      "travel": 7,
       "mode": "walk",
       "wait": 0,
       "branch": 1
      },
      {
-      "id": "g-stussy",
-      "start": 1042,
-      "end": 1072,
-      "travel": 7,
+      "id": "n-alo",
+      "start": 976,
+      "end": 1006,
+      "travel": 3,
       "mode": "walk",
       "wait": 0
      },
      {
       "id": "n-glossier",
-      "start": 1075,
-      "end": 1105,
+      "start": 1009,
+      "end": 1039,
+      "travel": 3,
+      "mode": "walk",
+      "wait": 0
+     },
+     {
+      "id": "g-stussy",
+      "start": 1042,
+      "end": 1072,
       "travel": 3,
       "mode": "walk",
       "wait": 0
      },
      {
       "id": "seed-kith",
-      "start": 1113,
-      "end": 1158,
-      "travel": 8,
+      "start": 1077,
+      "end": 1122,
+      "travel": 5,
       "mode": "walk",
       "wait": 0
      },
      {
       "id": "p-mv09xd9sed92",
-      "start": 1177,
-      "end": 1252,
+      "start": 1141,
+      "end": 1216,
       "travel": 19,
       "mode": "subway",
       "wait": 0
      },
      {
       "id": "seed-nubeluz",
-      "start": 1257,
-      "end": 1347,
+      "start": 1221,
+      "end": 1311,
       "travel": 5,
       "mode": "walk",
       "wait": 0
@@ -2715,16 +2716,16 @@
    {
     "items": [
      {
-      "id": "seed-oculus",
+      "id": "seed-911",
       "start": 453,
-      "end": 483,
+      "end": 498,
       "travel": 3,
       "mode": "walk",
       "wait": 0
      },
      {
-      "id": "seed-911",
-      "start": 483,
+      "id": "seed-oculus",
+      "start": 498,
       "end": 528,
       "travel": 0,
       "mode": "none",
@@ -2754,29 +2755,29 @@
    "remove": [],
    "add": [
     {
+     "id": "g-levain",
+     "day": 2,
+     "extra": 0
+    },
+    {
+     "id": "n-skims",
+     "day": 1,
+     "extra": 0
+    },
+    {
      "id": "g-chelsea",
      "day": 1,
-     "extra": 3
+     "extra": 4
+    },
+    {
+     "id": "g-nyon",
+     "day": 2,
+     "extra": 4
     },
     {
      "id": "g-leons",
      "day": 3,
      "extra": 5
-    },
-    {
-     "id": "g-magnolia",
-     "day": 1,
-     "extra": 7
-    },
-    {
-     "id": "g-frontgeneral",
-     "day": 0,
-     "extra": 7
-    },
-    {
-     "id": "g-summit",
-     "day": 1,
-     "extra": 10
     }
    ]
   },
@@ -2788,10 +2789,10 @@
   ],
   "stats": {
    "travel": 303,
-   "wait": 55,
+   "wait": 48,
    "freeMeals": 0,
-   "iterations": 8034,
-   "cost": 24993
+   "iterations": 8529,
+   "cost": 25250
   },
   "by": "dohyun1411"
  }
