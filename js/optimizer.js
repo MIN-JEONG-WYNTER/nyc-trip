@@ -489,15 +489,16 @@ function suggest(trip, sol, opts) {
       const base = probe.evalDay(d, seq);
       if (!base) return;
       for (let i = 0; i <= seq.length; i++) {
+        // 적용할 때와 같은 기준(비용이 가장 낮은 자리)으로 고르고, 그 자리의 이동 증가를 보여준다
         const ev = probe.evalDay(d, [...seq.slice(0, i), p.id, ...seq.slice(i)]);
-        if (ev && (!best || ev.travelSum - base.travelSum < best.extra)) best = { id: p.id, day: d, extra: ev.travelSum - base.travelSum };
+        if (ev && (!best || ev.cost - base.cost < best.dc)) best = { id: p.id, day: d, extra: ev.travelSum - base.travelSum, dc: ev.cost - base.cost };
       }
     });
     if (best && best.extra <= SUGGEST_ADD_MAX) add.push(best);
   }
   return {
     remove: remove.sort((a, b) => b.save - a.save).slice(0, 5),
-    add: add.sort((a, b) => a.extra - b.extra).slice(0, 5),
+    add: add.sort((a, b) => a.extra - b.extra).slice(0, 5).map(({ dc, ...x }) => x),
   };
 }
 
